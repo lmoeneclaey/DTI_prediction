@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 import sys
 import math
+import argparse
 
 from rdkit import DataStructs
 from rdkit import Chem
@@ -11,7 +12,8 @@ from sklearn.preprocessing import KernelCenterer
 
 from process_DB import get_DB
 
-root = './'
+# we have to change it in order to be robust
+root = './../CFTR_PROJECT/'
 # LIST_AA = ['Q', 'Y', 'R', 'W', 'T', 'F', 'K', 'V', 'S', 'C', 'H', 'L', 'E', \
     # 'P', 'D', 'N', 'I', 'A', 'M', 'G']
 # NB_MAX_ATOMS = 105
@@ -21,7 +23,7 @@ root = './'
 
 def center_and_normalise_kernel(K_temp):
 
-    ''' Center and normalise the Kernel matrix
+    """ Center and normalise the Kernel matrix
 
     Parameters
     ----------
@@ -33,7 +35,7 @@ def center_and_normalise_kernel(K_temp):
     K_norm : numpy array of shape *nb_item*
             centered and normalised Kernel matrix
 
-    '''
+    """
     K_temp = KernelCenterer().fit_transform(K_temp)
     nb_item = K_temp.shape[0]
     K_norm = np.zeros((nb_item, nb_item))
@@ -46,7 +48,7 @@ def center_and_normalise_kernel(K_temp):
 
 def make_mol_kernel(DB_version, DB_type, process_name):
 
-    ''' Compute the molecules kernels
+    """ Compute the molecules kernels
 
     Calculate the ECFP (Morgan fingerprint) for each moleculte and compute the 
     Tanimoto Similarity between all of them.
@@ -79,7 +81,7 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     AllChem.GetMorganFingerprint(m, radius) : get the Morgan Fingerprint 
         m : Chem.MolFromSmiles() object
         radius : when 2 roughly equivalent to ECFP4
-    '''
+    """
 
     # pattern_name variable
     pattern_name = process_name + '_' + DB_type
@@ -134,6 +136,36 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     print(X[500, 500], K_norm[500, 500])
     print(X[500, :], K_norm[500, :])
 
-
 if __name__ == "__main__":
-    make_mol_kernel(sys.argv[1],sys.argv[2], sys.argv[3])
+
+    parser = argparse.ArgumentParser(
+    "Calculate the ECFP (Morgan fingerprint) for each moleculte and compute \
+    the Tanimoto Similarity between all of them.")
+
+    parser.add_argument("DB_version", type = str,
+                        help = "the number of the DrugBank version, example: \
+                        'drugbank_vX.X.X'")
+
+    # to change
+    parser.add_argument("DB_type", type = str,
+                        help = "the DrugBank type, example: 'S0h'")
+
+    parser.add_argument("process_name", type = str,
+                        help = "the name of the process, helper to find the \
+                        data again, example = 'DTI'")
+
+    # parser.add_argument("-v", "--verbosity", action = "store_true", 
+                        # help = "increase output verbosity")
+
+    args = parser.parse_args()
+
+    # if args.verbose:
+        # print("find something")
+    # else:
+        # make_mol_kernel(args.DB_version,
+                #    args.DB_type,
+                #    args.process_name)
+    
+    make_mol_kernel(args.DB_version, 
+                    args.DB_type,
+                    args.process_name)
