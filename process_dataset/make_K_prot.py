@@ -19,7 +19,7 @@ root = './'
 
 def make_temp_Kprot(DB_version, DB_type, process_name, index):
     
-    '''Process the similarity between one particular protein with the others
+    """Process the similarity between one particular protein with the others
 
     Process the similarity (thanks to the L(ocal)A(lignment) Kernel) between \
         the protein (with the key *index* in the dict_target dictionary, and \
@@ -43,7 +43,7 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
     -------
     None
 
-    '''   
+    """   
 
     # pattern_name variable
     pattern_name = process_name + '_' + DB_type
@@ -71,7 +71,7 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
 
 
 def make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2):
-    '''Process make_temp_Kprot() for a range of proteins
+    """Process make_temp_Kprot() for a range of proteins
 
     The proteins got keys between *i1* and *i2* in the dict_target dictionary
     See the description of make_temp_Kprot for more details 
@@ -89,7 +89,7 @@ def make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2):
     Returns
     -------
     None
-    '''
+    """
 
     for index in range(i1, i2):
         make_temp_Kprot(DB_version, DB_type, process_name, index)
@@ -106,7 +106,7 @@ def make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2):
 
 def del_temp_Kprot(DB_version, DB_type, process_name):
 
-    '''Process make_temp_Kprot() for a range of proteins
+    """Process make_temp_Kprot() for a range of proteins
 
     The proteins got keys between *i1* and *i2* in the dict_target dictionary
     See the description of make_temp_Kprot for more details 
@@ -124,7 +124,7 @@ def del_temp_Kprot(DB_version, DB_type, process_name):
     Returns
     -------
     None
-    '''
+    """
 
     # pattern_name variable
     pattern_name = process_name + '_' + DB_type
@@ -156,10 +156,10 @@ def del_temp_Kprot(DB_version, DB_type, process_name):
 
 
 def check_temp_Kprot(DB_type):
-    '''Check the proteins for which the LAkernel isn't done
+    """Check the proteins for which the LAkernel isn't done
 
     
-    '''
+    """
 
     # pattern_name variable
     pattern_name = process_name + '_' + DB_type
@@ -185,7 +185,7 @@ def check_temp_Kprot(DB_type):
 
 def make_group_Kprot(DB_version, DB_type, process_name):
 
-    ''' Compute the proteins kernels
+    """ Compute the proteins kernels
 
     Calculate the ECFP (Morgan fingerprint) for each moleculte and compute the 
     Tanimoto Similarity between all of them.
@@ -218,7 +218,7 @@ def make_group_Kprot(DB_version, DB_type, process_name):
     AllChem.GetMorganFingerprint(m, radius) : get the Morgan Fingerprint 
         m : Chem.MolFromSmiles() object
         radius : when 2 roughly equivalent to ECFP4
-    '''
+    """
 
 
     # pattern_name variable
