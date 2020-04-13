@@ -3,23 +3,19 @@ import pickle
 import sys
 import math
 import os
+import argparse
 
 from sklearn.preprocessing import KernelCenterer
 
 from process_DB import get_DB
 from make_K_mol import center_and_normalise_kernel
 
-root = './'
-# LIST_AA = ['Q', 'Y', 'R', 'W', 'T', 'F', 'K', 'V', 'S', 'C', 'H', 'L', 'E', 'P', 'D', 'N',
-        #    'I', 'A', 'M', 'G']
-# NB_MAX_ATOMS = 105
-# MAX_SEQ_LENGTH = 1000
-# NB_ATOM_ATTRIBUTES = 32
-# NB_BOND_ATTRIBUTES = 8
+root = './../CFTR_PROJECT/'
+LAkernel_path = '$HOME/LAkernel-0.2/LAkernel_direct'
 
 def make_temp_Kprot(DB_version, DB_type, process_name, index):
-    
-    """Process the similarity between one particular protein with the others
+    """ 
+    Process the similarity between one particular protein with the others
 
     Process the similarity (thanks to the L(ocal)A(lignment) Kernel) between \
         the protein (with the key *index* in the dict_target dictionary, and \
@@ -42,7 +38,6 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
     Returns
     -------
     None
-
     """   
 
     # pattern_name variable
@@ -64,139 +59,20 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
         for j in range(index, nb_prot):
             print(j)
             FASTA2 = dict_target[dict_ind2prot[j]]
-            com = '$HOME/LAkernel-0.2/LAkernel_direct ' + FASTA1 + \
-                ' ' + FASTA2 + ' >> ' + output_filename
+            com = LAkernel_path + ' ' + FASTA1 + ' ' + FASTA2 + \
+                ' >> ' + output_filename
             cmd = os.popen(com)
             cmd.read()
 
-
-def make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2):
-    """Process make_temp_Kprot() for a range of proteins
-
-    The proteins got keys between *i1* and *i2* in the dict_target dictionary
-    See the description of make_temp_Kprot for more details 
-
-    Parameters
-    ----------
-    DB_version : str
-        string of the DrugBank version number
-        format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
-    DB_type : str
-        string of the DrugBank type exemple: "S0h"
-    process_name : str
-        string of the process name exemple: 'NNdti'
-
-    Returns
-    -------
-    None
-    """
-
-    for index in range(i1, i2):
-        make_temp_Kprot(DB_version, DB_type, process_name, index)
-
-
-# def count_nb_line_in_file(filename):
-#     count = None
-#     with open(filename, 'r') as f:
-#         count = 0
-#         for line in f:
-#             count += 1
-#     return count
-
-
-def del_temp_Kprot(DB_version, DB_type, process_name):
-
-    """Process make_temp_Kprot() for a range of proteins
-
-    The proteins got keys between *i1* and *i2* in the dict_target dictionary
-    See the description of make_temp_Kprot for more details 
-
-    Parameters
-    ----------
-    DB_version : str
-        string of the DrugBank version number
-        format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
-    DB_type : str
-        string of the DrugBank type exemple: "S0h"
-    process_name : str
-        string of the process name exemple: 'NNdti'
-
-    Returns
-    -------
-    None
-    """
-
-    # pattern_name variable
-    pattern_name = process_name + '_' + DB_type
-    # data_dir variable 
-    data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
-
-    # get the DBdataBase preprocessed
-    preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[1]
-
-    nb_prot = len(list(dict_target.keys()))
-
-    list_ = []
-    for index in range(nb_prot):
-        outf = root + data_dir + 'data/LAkernel/LA_' + DB_type + '_' + str(index) + '.txt'
-        if os.path.isfile(output_filename):
-            count_nb_line = 0
-            for line in open(output_filename).xreadlines(  ): count += 1
-            # if count_nb_line_in_file(outf) != nb_prot - index:
-            if count_nb_line != nb_prot - index:
-                list_.append(output_filename)
-        else:
-            list_.append(output_filename)
-    print(list_)
-
-    # for outf in list_:
-    #     if os.path.isfile(outf):
-    #         os.remove(outf)
-
-
-def check_temp_Kprot(DB_type):
-    """Check the proteins for which the LAkernel isn't done
-
-    
-    """
-
-    # pattern_name variable
-    pattern_name = process_name + '_' + DB_type
-    # data_dir variable 
-    data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
-
-    # get the DBdataBase preprocessed
-    preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[1]
-
-    nb_prot = len(list(dict_target.keys()))
-
-    list_ = []
-    for index in range(nb_prot):
-        outf = root + data_dir + 'LAkernel/LA_' + pattern_name + '_' + str(index) + '.txt'
-        if not os.path.isfile(outf):
-            list_.append(index)
-    print(list_)
-
-    for index in list_:
-        make_temp_Kprot(index, DB_type)
-
-
 def make_group_Kprot(DB_version, DB_type, process_name):
+    """
+    Process the similarity between all the proteins with LAkernel
 
-    """ Compute the proteins kernels
+    Use make_K_mol.center_and_normalise_kernel()
 
-    Calculate the ECFP (Morgan fingerprint) for each moleculte and compute the 
-    Tanimoto Similarity between all of them.
-
-    Use center_and_normalise_kernel()
-
-    Write 3 files:
-        - ..._X_ChemFingerprint.data : numpy array with each line representing \
-            the ECFP for each molecule (1024 arguments)
-        - ..._Kmol.data : Tanimoto Similarity Kernel
-        - ..._Kmol_norm.data : Centered and Normalised Kernel
+    Write 2 files:
+        - ..._Kprot.data : LA Kernel
+        - ..._Kprot_norm.data : Centered and Normalised Kernel
 
     Parameters
     ----------
@@ -211,15 +87,7 @@ def make_group_Kprot(DB_version, DB_type, process_name):
     Returns
     -------
     None
-
-    Notes
-    -----
-    Chem.MolFromSmiles(smile) : get the molecule structure from Smiles
-    AllChem.GetMorganFingerprint(m, radius) : get the Morgan Fingerprint 
-        m : Chem.MolFromSmiles() object
-        radius : when 2 roughly equivalent to ECFP4
     """
-
 
     # pattern_name variable
     pattern_name = process_name + '_' + DB_type
@@ -234,9 +102,13 @@ def make_group_Kprot(DB_version, DB_type, process_name):
 
     X = np.zeros((nb_prot, nb_prot))
     for i in range(nb_prot):
+
+        # output_filename
+        output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
+            '_' + str(i) + '.txt'
+
         j = i
-        for line in open(root + data_dir + pattern_name + \
-            'LAkernel/LA_' + pattern_name + '_' + str(i) + '.txt', 'r'):
+        for line in open(output_filename, 'r'):
             r = float(line.rstrip())
             X[i, j] = r
             X[j, i] = X[i, j]
@@ -244,13 +116,14 @@ def make_group_Kprot(DB_version, DB_type, process_name):
         if j != nb_prot:
             print(i, 'not total')
 
+    # normalized or unnormalized
     for norm_type in ['norm', 'unnorm']:
         if norm_type == 'unnorm':
-            kernel_filename = root + 'data/NNdti_' + DB_type + '_Kprot.data'
+            kernel_filename = root + data_dir + pattern_name + '_Kprot.data'
             pickle.dump(X, open(kernel_filename, 'wb'), protocol=2)
         elif norm_type == 'norm':
             K_norm = center_and_normalise_kernel(X)
-            kernel_filename = root + 'data/NNdti_' + DB_type + '_Kprot_norm.data'
+            kernel_filename = root + data_dir + pattern_name + '_Kprot_norm.data'
             pickle.dump(K_norm, open(kernel_filename, 'wb'), protocol=2)
 
     print(X[100, 100], K_norm[100, 100])
@@ -261,25 +134,39 @@ def make_group_Kprot(DB_version, DB_type, process_name):
 
 if __name__ == "__main__":
 
-    action = sys.argv[1]
-    DB_version = sys.argv[2]
-    DB_type = sys.argv[3]
-    process_name = sys.argv[4]
+    parser = argparse.ArgumentParser(
+    "Process the similarity between all the proteins with LAkernel")
 
-    if action == "temp":
-        index = int(sys.argv[5])
-        make_temp_Kprot(DB_version, DB_type, process_name, index)
+    # we want to choose between different string for action
+    parser.add_argument("action", type = str, choices = ["temp", "group"],
+                        help = "if you want to process the similarity to one or\
+                            all of the proteins")
 
-    elif action == "temp_range":
-        i1 = int(sys.argv[5])
-        i2 = int(sys.argv[6])
-        make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2)
+    parser.add_argument("DB_version", type = str, choices = ["drugbank_v5.1.1",
+                        "drugbank_v5.1.5"], help = "the number of the DrugBank \
+                            version, example: 'drugbank_vX.X.X'")
 
-    elif action == "del":
-        del_temp_Kprot(DB_version, DB_type, process_name)
+    # to change
+    parser.add_argument("DB_type", type = str,
+                        help = "the DrugBank type, example: 'S0h'")
 
-    elif action == "check":
-        check_temp_Kprot(DB_version, DB_type, process_name)
+    parser.add_argument("process_name", type = str,
+                        help = "the name of the process, helper to find the \
+                        data again, example = 'DTI'")
 
-    elif action == "group":
-        make_group_Kprot(DB_version, DB_type, process_name)
+    # need to change for the uniprotID
+    parser.add_argument("-i", "--index", type = int,
+                        help = "the range of the protein in question \
+                        exclusively for make_temp_Kprot()")
+
+    # parser.add_argument("-v", "--verbosity", action = "store_true", 
+                        # help = "increase output verbosity")
+
+    args = parser.parse_args()
+
+    if args.action == "temp":
+        make_temp_Kprot(args.DB_version, args.DB_type, args.process_name, \
+            args.index)
+
+    elif args.action == "group":
+        make_group_Kprot(args.DB_version, args.DB_type, args.process_name)
