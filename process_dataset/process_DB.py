@@ -21,8 +21,8 @@ LIST_AA = ['Q', 'Y', 'R', 'W', 'T', 'F', 'K', 'V', 'S', 'C', 'H', 'L', 'E', \
 
 
 def check_mol_weight(DB_type, m, dict_id2smile, weight, smile, dbid):
-
-    """ Put a threshold on the molecules' weight
+    """ 
+    Put a threshold on the molecules' weight
     
     This function is a complete dependency of get_all_DrugBanksmiles() and
     cannot be understood without.
@@ -45,7 +45,6 @@ def check_mol_weight(DB_type, m, dict_id2smile, weight, smile, dbid):
     dict_id2smile : dictionary
         keys : DrugBankId
         values : Smiles
-
     """ 
 
     # TO DO : put 'if loop' of 'm is not None and smile != '' before to better 
@@ -60,8 +59,8 @@ def check_mol_weight(DB_type, m, dict_id2smile, weight, smile, dbid):
     return dict_id2smile
 
 def get_all_DrugBank_smiles(DB_version, DB_type):
-
-    """ Get the smiles of the DrugBank molecules
+    """ 
+    Get the smiles of the DrugBank molecules
 
     Open the file 'structures.sdf' in the data folder. (See description in data.pdf)
     Look at each line and see if it concerns a DrugBank ID, a Smile, 
@@ -134,8 +133,8 @@ def get_all_DrugBank_smiles(DB_version, DB_type):
     return dict_id2smile
 
 def get_specie_per_uniprot(DB_version):
-
-    """ Get the proteins species 
+    """ 
+    Get the proteins species 
 
     Open the file 'drugbank_small_molecule_target_polypeptide_ids.csv\
         /all.csv' in the raw data folder. (See descritpion in data.pdf)
@@ -180,8 +179,8 @@ def get_specie_per_uniprot(DB_version):
 
 def check_prot_length(DB_version, DB_type, fasta, dict_uniprot2seq, dbid, \
     list_ligand, list_inter):
-    
-    """ Put a threshold on the molecules' weight
+    """ 
+    Put a threshold on the molecules' weight
     
     This function is a complete dependency of get_all_DrugBank_fasta() and
     cannot be understood without.
@@ -212,7 +211,6 @@ def check_prot_length(DB_version, DB_type, fasta, dict_uniprot2seq, dbid, \
         values : Fasta
     list_inter : list 
         [(UniprotID, DrugBankID)]
-
     """ 
     
     if DB_type == 'S':
@@ -239,8 +237,8 @@ def check_prot_length(DB_version, DB_type, fasta, dict_uniprot2seq, dbid, \
 
 
 def get_all_DrugBank_fasta(DB_version, DB_type):
-
-    """ Get the fasta of the Drug Bank proteins
+    """ 
+    Get the fasta of the Drug Bank proteins
 
     Open the file 'drugbank_small_molecule_target_polypeptide_sequences.fasta\
         /protein.fasta' in the data folder. (See description in data.pdf)
@@ -312,8 +310,8 @@ def get_all_DrugBank_fasta(DB_version, DB_type):
 
 
 def process_DB(DB_version, DB_type, process_name):
-
-    """ Process the DrugBank database
+    """ 
+    Process the DrugBank database
 
     The aim is to have the molecules, the proteins and the interactions with \
         these filters:
@@ -353,7 +351,6 @@ def process_DB(DB_version, DB_type, process_name):
     Returns
     -------
     None
-
     """
 
     # pattern_name variable
@@ -447,8 +444,8 @@ def process_DB(DB_version, DB_type, process_name):
 
 
 def get_DB(DB_version, DB_type, process_name):
-
-    """ Load the preprocessed DrugBank database
+    """ 
+    Load the preprocessed DrugBank database
     
     Preprocessed thanks to __main__ in process_DB.py
 
@@ -472,8 +469,7 @@ def get_DB(DB_version, DB_type, process_name):
     dict_ind2mol dict keys : ind values : DrugBankID
     dict_mol2ind dict keys : DrugBankID values : ind
     dict_ind2_prot dict keys : ind values : UniprotID
-    dict_prot2ind dict keys : UniprotID values : ind
-        
+    dict_prot2ind dict keys : UniprotID values : ind    
     """
 
     # pattern_name variable

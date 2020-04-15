@@ -22,8 +22,8 @@ root = './../CFTR_PROJECT/'
 # NB_BOND_ATTRIBUTES = 8
 
 def center_and_normalise_kernel(K_temp):
-
-    """ Center and normalise the Kernel matrix
+    """ 
+    Center and normalise the Kernel matrix
 
     Parameters
     ----------
@@ -34,8 +34,8 @@ def center_and_normalise_kernel(K_temp):
     -------
     K_norm : numpy array of shape *nb_item*
             centered and normalised Kernel matrix
-
     """
+    
     K_temp = KernelCenterer().fit_transform(K_temp)
     nb_item = K_temp.shape[0]
     K_norm = np.zeros((nb_item, nb_item))
@@ -47,8 +47,8 @@ def center_and_normalise_kernel(K_temp):
     return K_norm
 
 def make_mol_kernel(DB_version, DB_type, process_name):
-
-    """ Compute the molecules kernels
+    """ 
+    Compute the molecules kernels
 
     Calculate the ECFP (Morgan fingerprint) for each moleculte and compute the 
     Tanimoto Similarity between all of them.
