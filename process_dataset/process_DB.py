@@ -7,6 +7,9 @@ import os
 import re
 import argparse
 
+# maybe to remove
+import csv
+
 # TO D0 : split the file between molecules and proteins
 # TO DO : order the different dictionaries
 
@@ -163,17 +166,36 @@ def get_specie_per_uniprot(DB_version):
 
     dict_specie_per_prot = {}
 
-    import csv
+    # # 1 - using csv_reader
 
-    reader = \
-        csv.reader(open(root + raw_data_dir + \
-            'drugbank_small_molecule_target_polypeptide_ids.csv/all.csv', 'r'),
-                   delimiter=',')
-    i = 0
-    for row in reader:
-        if i > 0:
-            dict_specie_per_prot[row[5]] = row[11]
-        i += 1
+    # reader = \
+    #     csv.reader(open(root + raw_data_dir + \
+    #         'drugbank_small_molecule_target_polypeptide_ids.csv/all.csv', 'r'),
+    #                delimiter=',')
+    # i = 0
+    # # changer 
+    # for row in reader:
+    #     # if i > 0:
+    #     dict_specie_per_prot[row[5]] = row[11]
+    #     # i += 1
+
+    # 2 - using pandas
+
+    df = pd.read_csv(root + raw_data_dir + \
+        'drugbank_small_molecule_target_polypeptide_ids.csv/all.csv', sep=',')
+    df = df.fillna('')
+
+    df_uniprot_id = df['UniProt ID']
+    df_species = df['Species']
+
+    for line in range(df.shape[0]):
+        dict_specie_per_prot[df_uniprot_id[line]] = df_species[line]
+
+    # 3 - quicker method
+
+    # df_tronc = df[['UniProt ID', 'Species']]
+    # trans_df_tronc = df_tronc.set_index("UniProt ID").T
+    # dict_specie_per_prot = trans_df_tronc.to_dict("list")
 
     return dict_specie_per_prot
 
