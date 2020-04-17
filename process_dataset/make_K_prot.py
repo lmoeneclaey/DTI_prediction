@@ -15,15 +15,17 @@ LAkernel_path = '$HOME/LAkernel-0.2/LAkernel_direct'
 
 def make_temp_Kprot(DB_version, DB_type, process_name, index):
     """ 
-    Process the similarity between one particular protein with the others
+    Process the similarity of one particular protein with the others
 
-    Process the similarity (thanks to the L(ocal)A(lignment) Kernel) between \
-        the protein (with the key *index* in the dict_target dictionary, and \
-        corresponding to the fasta FASTA_A) with the proteins between *index+1* \
-        and *nb_prot* (corresponding to fasta FASTA_B), with the command:
-            $HOME/LAkernel-0.2/LAkernel_direct FASTA_A FASTA B
+    Process the similarity (thanks to the L(ocal)A(lignment) Kernel) of \
+        the protein (with the key *index* in the dict_ind2prot dictionary, and \
+        corresponding to the fasta FASTA_A) with the proteins between *index+1*\
+        and *nb_prot* (corresponding to fasta FASTA_B) in the dict_ind2prot \
+        dictionary, with the command: \
+        '$HOME/LAkernel-0.2/LAkernel_direct FASTA_A FASTA B'
 
-    Then append the output to the file LA_kernel/LA_..._[index].txt 
+    Then append the output to the file LA_kernel/LA_..._[dbid].txt, where dbid \
+        is the value of the key *index* in the dict_ind2prot dictionary. 
 
     Parameters
     ----------
@@ -34,6 +36,8 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
         string of the DrugBank type exemple: "S0h"
     process_name : str
         string of the process name exemple: 'NNdti'
+    index : int
+        index of the protein in the dictionaries
 
     Returns
     -------
@@ -44,21 +48,29 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
     pattern_name = process_name + '_' + DB_type
     # data_dir variable 
     data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
-    # output_filename
-    output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
-        '_' + str(index) + '.txt'
     
     # get the DataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
     dict_target = preprocessed_DB[1]
     dict_ind2prot = preprocessed_DB[3]
 
+    # output_filename
+    dbid = dict_ind2prot[index]
+    # output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
+    #     '_' + str(index) + '.txt'
+    output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
+        '_' + dbid + '.txt'
+
     nb_prot = len(list(dict_target.keys()))
-    FASTA1 = dict_target[dict_ind2prot[index]]
+    # FASTA1 = dict_target[dict_ind2prot[index]]
+    FASTA1 = dict_target[dbid]
     if not os.path.isfile(output_filename):
+        print(index, ":", dbid)
         for j in range(index, nb_prot):
             print(j)
-            FASTA2 = dict_target[dict_ind2prot[j]]
+            dbid2 = dict_ind2prot[j]
+            # FASTA2 = dict_target[dict_ind2prot[j]]
+            FASTA2 = dict_target[dbid2]
             com = LAkernel_path + ' ' + FASTA1 + ' ' + FASTA2 + \
                 ' >> ' + output_filename
             cmd = os.popen(com)
@@ -97,15 +109,19 @@ def make_group_Kprot(DB_version, DB_type, process_name):
     # get the DBdataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
     dict_target = preprocessed_DB[1]
+    dict_ind2prot = preprocessed_DB[3]
 
     nb_prot = len(list(dict_target.keys()))
-
     X = np.zeros((nb_prot, nb_prot))
     for i in range(nb_prot):
 
+
         # output_filename
+        # output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
+        #     '_' + str(i) + '.txt'
+        dbid = dict_ind2prot[i]
         output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
-            '_' + str(i) + '.txt'
+            '_' + dbid + '.txt'
 
         j = i
         for line in open(output_filename, 'r'):
@@ -114,7 +130,8 @@ def make_group_Kprot(DB_version, DB_type, process_name):
             X[j, i] = X[i, j]
             j += 1
         if j != nb_prot:
-            print(i, 'not total')
+            print(dbid, 'kernel, corresponding to the protein nb ', i, 
+            ', is uncompleted')
 
     # normalized or unnormalized
     for norm_type in ['norm', 'unnorm']:
@@ -156,7 +173,7 @@ if __name__ == "__main__":
 
     # need to change for the uniprotID
     parser.add_argument("-i", "--index", type = int,
-                        help = "the range of the protein in question \
+                        help = "the index of the protein in question \
                         exclusively for make_temp_Kprot()")
 
     # parser.add_argument("-v", "--verbosity", action = "store_true", 

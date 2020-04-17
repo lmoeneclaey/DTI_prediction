@@ -30,6 +30,10 @@ def make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2):
         string of the DrugBank type exemple: "S0h"
     process_name : str
         string of the process name exemple: 'NNdti'
+    i1 : int
+        index of the first protein in the range in the dictionaries
+    i2 : int
+        index of the last protein in the range in the dictionaries
 
     Returns
     -------
@@ -70,6 +74,7 @@ def check_temp_Kprot(DB_version, DB_type, process_name):
     # get the DBdataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
     dict_target = preprocessed_DB[1]
+    dict_ind2prot = preprocessed_DB[3]
 
     nb_prot = len(list(dict_target.keys()))
 
@@ -77,8 +82,11 @@ def check_temp_Kprot(DB_version, DB_type, process_name):
     for index in range(nb_prot):
 
         # output_filename
+        dbid = dict_ind2prot[index]
+        # output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
+        #     '_' + str(index) + '.txt'
         output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
-            '_' + str(index) + '.txt'
+            '_' + dbid + '.txt'
 
         if not os.path.isfile(output_filename):
             list_.append(index)
@@ -126,6 +134,7 @@ def del_temp_Kprot(DB_version, DB_type, process_name, delete_bool=False):
     # get the DBdataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
     dict_target = preprocessed_DB[1]
+    dict_ind2prot = preprocessed_DB[3]
 
     nb_prot = len(list(dict_target.keys()))
 
@@ -133,8 +142,11 @@ def del_temp_Kprot(DB_version, DB_type, process_name, delete_bool=False):
     for index in range(nb_prot):
 
         # output_filename
+        dbid = dict_ind2prot[index]
+        # output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
+        #     '_' + str(index) + '.txt'
         output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
-            '_' + str(index) + '.txt'
+            '_' + dbid + '.txt'
 
         if os.path.isfile(output_filename):
             output_file = open(output_filename)

@@ -35,7 +35,7 @@ def center_and_normalise_kernel(K_temp):
     K_norm : numpy array of shape *nb_item*
             centered and normalised Kernel matrix
     """
-    
+
     K_temp = KernelCenterer().fit_transform(K_temp)
     nb_item = K_temp.shape[0]
     K_norm = np.zeros((nb_item, nb_item))
@@ -89,7 +89,7 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
 
     # get the DBdataBase preprocessed
-
+    # dict_ind2mol is necessary to fill the fingerprints' matrix 
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
     dict_ligand = preprocessed_DB[0]
     dict_ind2mol = preprocessed_DB[4]
@@ -98,8 +98,10 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     nb_mol = len(list(dict_ligand.keys()))
     X_fingerprint = np.zeros((nb_mol, 1024), dtype=np.int32)
     list_fingerprint = []
-    for i in list(dict_ind2mol.keys()):
-        m = Chem.MolFromSmiles(dict_ligand[dict_ind2mol[i]])
+    # for i in list(dict_ind2mol.keys()):
+    for i in range(nb_mol):
+        dbid = dict_ind2mol[i]
+        m = Chem.MolFromSmiles(dict_ligand[dbid])
         list_fingerprint.append(AllChem.GetMorganFingerprint(m, 2))
         arr = np.zeros((1,))
         DataStructs.ConvertToNumpyArray(
