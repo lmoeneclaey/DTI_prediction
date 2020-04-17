@@ -80,7 +80,7 @@ def get_all_DrugBank_smiles(DB_version, DB_type):
 
     Returns
     -------
-    dict_id2smile : dictionary
+    dict_id2smile_sorted : dictionary
         keys : DrugBankID
         values : Smiles
 
@@ -133,7 +133,12 @@ def get_all_DrugBank_smiles(DB_version, DB_type):
                                     smile,
                                     dbid)
 
-    return dict_id2smile
+    # sorted by DrugBankID
+    dict_id2smile_sorted = {}
+    for dbid in sorted(dict_id2smile.keys()):
+        dict_id2smile_sorted[dbid] = dict_id2smile[dbid]
+
+    return dict_id2smile_sorted
 
 def get_specie_per_uniprot(DB_version):
     """ 
@@ -278,10 +283,10 @@ def get_all_DrugBank_fasta(DB_version, DB_type):
 
     Returns
     -------
-    dict_uniprot2seq : dictionary
+    dict_uniprot2seq_sorted : dictionary
         keys : UniprotID
         values : Fasta
-    list_inter : list 
+    list_inter_sorted : list 
         [(UniprotID, DrugBankID)]
     """ 
 
@@ -328,7 +333,17 @@ def get_all_DrugBank_fasta(DB_version, DB_type):
                                                     dbid, 
                                                     list_ligand, 
                                                     list_inter)
-    return dict_uniprot2seq, list_inter
+
+    # sorted by UniprotID
+    dict_uniprot2seq_sorted = {}
+    for dbid in sorted(dict_uniprot2seq.keys()):
+        dict_uniprot2seq_sorted[dbid] = dict_uniprot2seq[dbid]
+
+    # sorted by UniProtID then DrugBankID
+    list_inter_sorted = \
+        sorted(list_inter, key=lambda dbid: (dbid[0], dbid[1]))
+
+    return dict_uniprot2seq_sorted, list_inter_sorted
 
 
 def process_DB(DB_version, DB_type, process_name):
@@ -389,6 +404,7 @@ def process_DB(DB_version, DB_type, process_name):
 
     dict_id2smile = get_all_DrugBank_smiles(DB_version,
                                             DB_type)
+                                            
     dict_uniprot2fasta, list_inter = get_all_DrugBank_fasta(DB_version, 
                                                             DB_type)
 
@@ -403,7 +419,12 @@ def process_DB(DB_version, DB_type, process_name):
             dict_uniprot2fasta_inter[couple[0]] = dict_uniprot2fasta[couple[0]]
     print('nb interactions', len(list_interactions))
 
-    pickle.dump(dict_id2smile_inter,
+    # sorted by DrugBankID
+    dict_id2smile_inter_sorted = {}
+    for dbid in sorted(dict_id2smile_inter.keys()):
+        dict_id2smile_inter_sorted[dbid] = dict_id2smile_inter[dbid]
+
+    pickle.dump(dict_id2smile_inter_sorted,
                 open(root + data_dir + pattern_name +
                  '_dict_DBid2smiles.data',\
                 'wb'))
@@ -432,15 +453,15 @@ def process_DB(DB_version, DB_type, process_name):
     f.close()
 
     f = open(root + data_dir + pattern_name + '_DBid2smiles.tsv', 'w')
-    for im, mol in enumerate(list(dict_id2smile_inter.keys())):
-        f.write(mol + '\t' + dict_id2smile_inter[mol] + '\n')
+    for im, mol in enumerate(list(dict_id2smile_inter_sorted.keys())):
+        f.write(mol + '\t' + dict_id2smile_inter_sorted[mol] + '\n')
         dict_ind2mol[im] = mol
         dict_mol2ind[mol] = im
     f.close()
 
     # Matrix of interactions
     intMat = np.zeros((len(list(dict_uniprot2fasta_inter.keys())),
-                       len(list(dict_id2smile_inter.keys()))),
+                       len(list(dict_id2smile_inter_sorted.keys()))),
                       dtype=np.int32)
     for couple in list_interactions:
         intMat[dict_prot2ind[couple[0]], dict_mol2ind[couple[1]]] = 1
