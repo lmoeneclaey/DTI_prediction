@@ -144,8 +144,8 @@ if __name__ == "__main__":
     "Calculate the ECFP (Morgan fingerprint) for each moleculte and compute \
     the Tanimoto Similarity between all of them.")
 
-    parser.add_argument("DB_version", type = str,
-                        help = "the number of the DrugBank version, example: \
+    parser.add_argument("DB_version", type = str, choices = ["drugbank_v5.1.1",
+                        "drugbank_v5.1.5"],help = "the number of the DrugBank version, example: \
                         'drugbank_vX.X.X'")
 
     # to change

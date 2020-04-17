@@ -548,8 +548,8 @@ interactions with these filters:\n\
     - molecules with know Smiles, loadable with Chem, µM between 100 and 800\n\
     - proteins with all known aa in list, known fasta, and length < 1000\n")
 
-    parser.add_argument("DB_version", type = str,
-                        help = "the number of the DrugBank version, example: \
+    parser.add_argument("DB_version", type = str, choices = ["drugbank_v5.1.1",
+                        "drugbank_v5.1.5"], help = "the number of the DrugBank version, example: \
                         'drugbank_vX.X.X'")
 
     # to change
