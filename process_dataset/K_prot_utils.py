@@ -40,6 +40,7 @@ def make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2):
     """
 
     for index in range(i1, i2):
+        print(index)
         make_temp_Kprot(DB_version, DB_type, process_name, index)
 
 
@@ -82,8 +83,6 @@ def check_temp_Kprot(DB_version, DB_type, process_name):
 
         # output_filename
         dbid = dict_ind2prot[index]
-        # output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
-        #     '_' + str(index) + '.txt'
         output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
             '_' + dbid + '.txt'
 
@@ -94,17 +93,7 @@ def check_temp_Kprot(DB_version, DB_type, process_name):
     for index in list_:
         make_temp_Kprot(DB_version, DB_type, process_name, index)
 
-
-# If del_temp_Kprot is working you can remove the underlying lines
-# def count_nb_line_in_file(filename):
-#     count = None
-#     with open(filename, 'r') as f:
-#         count = 0
-#         for line in f:
-#             count += 1
-#     return count
-
-def del_temp_Kprot(DB_version, DB_type, process_name, delete_bool=False):
+def del_temp_Kprot(DB_version, DB_type, process_name, delete):
     """ 
     Check (and -optional- delete) LAkernel output files which are not completed.  
 
@@ -117,7 +106,7 @@ def del_temp_Kprot(DB_version, DB_type, process_name, delete_bool=False):
         string of the DrugBank type exemple: "S0h"
     process_name : str
         string of the process name exemple: 'NNdti'
-    delete_bool : boolean
+    delete : boolean
         whether or not to delete the file 
 
     Returns
@@ -142,23 +131,22 @@ def del_temp_Kprot(DB_version, DB_type, process_name, delete_bool=False):
 
         # output_filename
         dbid = dict_ind2prot[index]
-        # output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
-        #     '_' + str(index) + '.txt'
         output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
             '_' + dbid + '.txt'
 
         if os.path.isfile(output_filename):
             output_file = open(output_filename)
             count_nb_line = 0
-            for line in output_file.xreadlines(): count_nb_line += 1
-            # if count_nb_line_in_file(outf) != nb_prot - index:
+            for line in output_file.readlines(): count_nb_line += 1
             if count_nb_line != nb_prot - index:
                 list_.append(output_filename)
         else:
             list_.append(output_filename)
     print(list_)
 
-    if delete_bool==True:
+    print('delete', delete)
+
+    if delete==True:
         for outf in list_:
             if os.path.isfile(outf):
                 os.remove(outf)
@@ -196,7 +184,7 @@ if __name__ == "__main__":
                         help = "the range of the protein in question, \
                         exclusively for make_range_temp_Kprot()")
 
-    parser.add_argument("--delete_bool", type = bool,
+    parser.add_argument("--delete", action="store_true",
                         help = "whether or not to delete the file, exclusively \
                         for del_temp_Kprot()")
 
@@ -207,11 +195,11 @@ if __name__ == "__main__":
 
     if args.action == "temp_range":
         make_range_temp_Kprot(args.DB_version, args.DB_type, args.process_name,\
-            args.index1, args.index1)
+            args.index1, args.index2)
 
     elif args.action == "check":
         check_temp_Kprot(args.DB_version, args.DB_type, args.process_name)
     
     elif args.action == "del":
         del_temp_Kprot(args.DB_version, args.DB_type, args.process_name, \
-            args.delete_bool)
+            args.delete)

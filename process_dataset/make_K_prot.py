@@ -45,6 +45,7 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
     -------
     None
     """   
+    print("check - make_temp_Kprot")
 
     # pattern_name variable
     pattern_name = process_name + '_' + DB_type
@@ -63,20 +64,16 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
 
     # output_filename
     dbid = dict_ind2prot[index]
-    # output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
-    #     '_' + str(index) + '.txt'
     output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
         '_' + dbid + '.txt'
 
+
     nb_prot = len(list(dict_target.keys()))
-    # FASTA1 = dict_target[dict_ind2prot[index]]
     FASTA1 = dict_target[dbid]
     if not os.path.isfile(output_filename):
         print(index, ":", dbid)
         for j in range(index, nb_prot):
-            print(j)
             dbid2 = dict_ind2prot[j]
-            # FASTA2 = dict_target[dict_ind2prot[j]]
             FASTA2 = dict_target[dbid2]
             com = LAkernel_path + ' ' + FASTA1 + ' ' + FASTA2 + \
                 ' >> ' + output_filename
@@ -124,8 +121,6 @@ def make_group_Kprot(DB_version, DB_type, process_name):
 
 
         # output_filename
-        # output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
-        #     '_' + str(i) + '.txt'
         dbid = dict_ind2prot[i]
         output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
             '_' + dbid + '.txt'
