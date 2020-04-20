@@ -11,7 +11,9 @@ from process_DB import get_DB
 from make_K_mol import center_and_normalise_kernel
 
 root = './../CFTR_PROJECT/'
-LAkernel_path = '$HOME/LAkernel-0.3.2/LAkernel_direct'
+# Change to path in my $HOME 
+# But problem in compiling LAkernel-0.2 and LAkernel-0.3.2
+LAkernel_path = '/cbio/donnees/bplaye/LAkernel-0.2/LAkernel_direct'
 
 def make_temp_Kprot(DB_version, DB_type, process_name, index):
     """ 
@@ -22,7 +24,7 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
         corresponding to the fasta FASTA_A) with the proteins between *index+1*\
         and *nb_prot* (corresponding to fasta FASTA_B) in the dict_ind2prot \
         dictionary, with the command: \
-        '$HOME/LAkernel-0.3.2/LAkernel_direct FASTA_A FASTA B'
+        'LAkernel_direct FASTA_A FASTA B'
 
     Then append the output to the file LA_kernel/LA_..._[dbid].txt, where dbid \
         is the value of the key *index* in the dict_ind2prot dictionary. 
