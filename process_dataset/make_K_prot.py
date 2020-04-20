@@ -156,8 +156,8 @@ if __name__ == "__main__":
 
     # we want to choose between different string for action
     parser.add_argument("action", type = str, choices = ["temp", "group"],
-                        help = "if you want to process the similarity to one or\
-                            all of the proteins")
+                        help = "if you want to process the similarity to one \
+                            (temp) or all of the proteins (group)")
 
     parser.add_argument("DB_version", type = str, choices = ["drugbank_v5.1.1",
                         "drugbank_v5.1.5"], help = "the number of the DrugBank \
