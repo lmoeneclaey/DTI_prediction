@@ -12,7 +12,6 @@ from make_K_mol import center_and_normalise_kernel
 from make_K_prot import make_temp_Kprot
 
 root = './../CFTR_PROJECT/'
-LAkernel_path = '$HOME/LAkernel-0.2/LAkernel_direct'
 
 def make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2):
     """ 
