@@ -7,6 +7,9 @@ import os
 import re
 import argparse
 
+# maybe to remove
+import csv
+
 # TO D0 : split the file between molecules and proteins
 # TO DO : order the different dictionaries
 
@@ -21,8 +24,8 @@ LIST_AA = ['Q', 'Y', 'R', 'W', 'T', 'F', 'K', 'V', 'S', 'C', 'H', 'L', 'E', \
 
 
 def check_mol_weight(DB_type, m, dict_id2smile, weight, smile, dbid):
-
-    """ Put a threshold on the molecules' weight
+    """ 
+    Put a threshold on the molecules' weight
     
     This function is a complete dependency of get_all_DrugBanksmiles() and
     cannot be understood without.
@@ -45,7 +48,6 @@ def check_mol_weight(DB_type, m, dict_id2smile, weight, smile, dbid):
     dict_id2smile : dictionary
         keys : DrugBankId
         values : Smiles
-
     """ 
 
     # TO DO : put 'if loop' of 'm is not None and smile != '' before to better 
@@ -60,8 +62,8 @@ def check_mol_weight(DB_type, m, dict_id2smile, weight, smile, dbid):
     return dict_id2smile
 
 def get_all_DrugBank_smiles(DB_version, DB_type):
-
-    """ Get the smiles of the DrugBank molecules
+    """ 
+    Get the smiles of the DrugBank molecules
 
     Open the file 'structures.sdf' in the data folder. (See description in data.pdf)
     Look at each line and see if it concerns a DrugBank ID, a Smile, 
@@ -78,7 +80,7 @@ def get_all_DrugBank_smiles(DB_version, DB_type):
 
     Returns
     -------
-    dict_id2smile : dictionary
+    dict_id2smile_sorted : dictionary
         keys : DrugBankID
         values : Smiles
 
@@ -131,11 +133,16 @@ def get_all_DrugBank_smiles(DB_version, DB_type):
                                     smile,
                                     dbid)
 
-    return dict_id2smile
+    # sorted by DrugBankID
+    dict_id2smile_sorted = {}
+    for dbid in sorted(dict_id2smile.keys()):
+        dict_id2smile_sorted[dbid] = dict_id2smile[dbid]
+
+    return dict_id2smile_sorted
 
 def get_specie_per_uniprot(DB_version):
-
-    """ Get the proteins species 
+    """ 
+    Get the proteins species 
 
     Open the file 'drugbank_small_molecule_target_polypeptide_ids.csv\
         /all.csv' in the raw data folder. (See descritpion in data.pdf)
@@ -164,24 +171,43 @@ def get_specie_per_uniprot(DB_version):
 
     dict_specie_per_prot = {}
 
-    import csv
+    # # 1 - using csv_reader
 
-    reader = \
-        csv.reader(open(root + raw_data_dir + \
-            'drugbank_small_molecule_target_polypeptide_ids.csv/all.csv', 'r'),
-                   delimiter=',')
-    i = 0
-    for row in reader:
-        if i > 0:
-            dict_specie_per_prot[row[5]] = row[11]
-        i += 1
+    # reader = \
+    #     csv.reader(open(root + raw_data_dir + \
+    #         'drugbank_small_molecule_target_polypeptide_ids.csv/all.csv', 'r'),
+    #                delimiter=',')
+    # i = 0
+    # # changer 
+    # for row in reader:
+    #     # if i > 0:
+    #     dict_specie_per_prot[row[5]] = row[11]
+    #     # i += 1
+
+    # 2 - using pandas
+
+    df = pd.read_csv(root + raw_data_dir + \
+        'drugbank_small_molecule_target_polypeptide_ids.csv/all.csv', sep=',')
+    df = df.fillna('')
+
+    df_uniprot_id = df['UniProt ID']
+    df_species = df['Species']
+
+    for line in range(df.shape[0]):
+        dict_specie_per_prot[df_uniprot_id[line]] = df_species[line]
+
+    # 3 - quicker method
+
+    # df_tronc = df[['UniProt ID', 'Species']]
+    # trans_df_tronc = df_tronc.set_index("UniProt ID").T
+    # dict_specie_per_prot = trans_df_tronc.to_dict("list")
 
     return dict_specie_per_prot
 
 def check_prot_length(DB_version, DB_type, fasta, dict_uniprot2seq, dbid, \
     list_ligand, list_inter):
-    
-    """ Put a threshold on the molecules' weight
+    """ 
+    Put a threshold on the molecules' weight
     
     This function is a complete dependency of get_all_DrugBank_fasta() and
     cannot be understood without.
@@ -212,7 +238,6 @@ def check_prot_length(DB_version, DB_type, fasta, dict_uniprot2seq, dbid, \
         values : Fasta
     list_inter : list 
         [(UniprotID, DrugBankID)]
-
     """ 
     
     if DB_type == 'S':
@@ -239,8 +264,8 @@ def check_prot_length(DB_version, DB_type, fasta, dict_uniprot2seq, dbid, \
 
 
 def get_all_DrugBank_fasta(DB_version, DB_type):
-
-    """ Get the fasta of the Drug Bank proteins
+    """ 
+    Get the fasta of the Drug Bank proteins
 
     Open the file 'drugbank_small_molecule_target_polypeptide_sequences.fasta\
         /protein.fasta' in the data folder. (See description in data.pdf)
@@ -258,10 +283,10 @@ def get_all_DrugBank_fasta(DB_version, DB_type):
 
     Returns
     -------
-    dict_uniprot2seq : dictionary
+    dict_uniprot2seq_sorted : dictionary
         keys : UniprotID
         values : Fasta
-    list_inter : list 
+    list_inter_sorted : list 
         [(UniprotID, DrugBankID)]
     """ 
 
@@ -308,12 +333,22 @@ def get_all_DrugBank_fasta(DB_version, DB_type):
                                                     dbid, 
                                                     list_ligand, 
                                                     list_inter)
-    return dict_uniprot2seq, list_inter
+
+    # sorted by UniprotID
+    dict_uniprot2seq_sorted = {}
+    for dbid in sorted(dict_uniprot2seq.keys()):
+        dict_uniprot2seq_sorted[dbid] = dict_uniprot2seq[dbid]
+
+    # sorted by UniProtID then DrugBankID
+    list_inter_sorted = \
+        sorted(list_inter, key=lambda dbid: (dbid[0], dbid[1]))
+
+    return dict_uniprot2seq_sorted, list_inter_sorted
 
 
 def process_DB(DB_version, DB_type, process_name):
-
-    """ Process the DrugBank database
+    """ 
+    Process the DrugBank database
 
     The aim is to have the molecules, the proteins and the interactions with \
         these filters:
@@ -353,7 +388,6 @@ def process_DB(DB_version, DB_type, process_name):
     Returns
     -------
     None
-
     """
 
     # pattern_name variable
@@ -370,6 +404,7 @@ def process_DB(DB_version, DB_type, process_name):
 
     dict_id2smile = get_all_DrugBank_smiles(DB_version,
                                             DB_type)
+                                            
     dict_uniprot2fasta, list_inter = get_all_DrugBank_fasta(DB_version, 
                                                             DB_type)
 
@@ -384,7 +419,12 @@ def process_DB(DB_version, DB_type, process_name):
             dict_uniprot2fasta_inter[couple[0]] = dict_uniprot2fasta[couple[0]]
     print('nb interactions', len(list_interactions))
 
-    pickle.dump(dict_id2smile_inter,
+    # sorted by DrugBankID
+    dict_id2smile_inter_sorted = {}
+    for dbid in sorted(dict_id2smile_inter.keys()):
+        dict_id2smile_inter_sorted[dbid] = dict_id2smile_inter[dbid]
+
+    pickle.dump(dict_id2smile_inter_sorted,
                 open(root + data_dir + pattern_name +
                  '_dict_DBid2smiles.data',\
                 'wb'))
@@ -413,15 +453,15 @@ def process_DB(DB_version, DB_type, process_name):
     f.close()
 
     f = open(root + data_dir + pattern_name + '_DBid2smiles.tsv', 'w')
-    for im, mol in enumerate(list(dict_id2smile_inter.keys())):
-        f.write(mol + '\t' + dict_id2smile_inter[mol] + '\n')
+    for im, mol in enumerate(list(dict_id2smile_inter_sorted.keys())):
+        f.write(mol + '\t' + dict_id2smile_inter_sorted[mol] + '\n')
         dict_ind2mol[im] = mol
         dict_mol2ind[mol] = im
     f.close()
 
     # Matrix of interactions
     intMat = np.zeros((len(list(dict_uniprot2fasta_inter.keys())),
-                       len(list(dict_id2smile_inter.keys()))),
+                       len(list(dict_id2smile_inter_sorted.keys()))),
                       dtype=np.int32)
     for couple in list_interactions:
         intMat[dict_prot2ind[couple[0]], dict_mol2ind[couple[1]]] = 1
@@ -447,8 +487,8 @@ def process_DB(DB_version, DB_type, process_name):
 
 
 def get_DB(DB_version, DB_type, process_name):
-
-    """ Load the preprocessed DrugBank database
+    """ 
+    Load the preprocessed DrugBank database
     
     Preprocessed thanks to __main__ in process_DB.py
 
@@ -472,8 +512,7 @@ def get_DB(DB_version, DB_type, process_name):
     dict_ind2mol dict keys : ind values : DrugBankID
     dict_mol2ind dict keys : DrugBankID values : ind
     dict_ind2_prot dict keys : ind values : UniprotID
-    dict_prot2ind dict keys : UniprotID values : ind
-        
+    dict_prot2ind dict keys : UniprotID values : ind    
     """
 
     # pattern_name variable
@@ -509,8 +548,8 @@ interactions with these filters:\n\
     - molecules with know Smiles, loadable with Chem, µM between 100 and 800\n\
     - proteins with all known aa in list, known fasta, and length < 1000\n")
 
-    parser.add_argument("DB_version", type = str,
-                        help = "the number of the DrugBank version, example: \
+    parser.add_argument("DB_version", type = str, choices = ["drugbank_v5.1.1",
+                        "drugbank_v5.1.5"], help = "the number of the DrugBank version, example: \
                         'drugbank_vX.X.X'")
 
     # to change

@@ -22,8 +22,8 @@ root = './../CFTR_PROJECT/'
 # NB_BOND_ATTRIBUTES = 8
 
 def center_and_normalise_kernel(K_temp):
-
-    """ Center and normalise the Kernel matrix
+    """ 
+    Center and normalise the Kernel matrix
 
     Parameters
     ----------
@@ -34,8 +34,8 @@ def center_and_normalise_kernel(K_temp):
     -------
     K_norm : numpy array of shape *nb_item*
             centered and normalised Kernel matrix
-
     """
+
     K_temp = KernelCenterer().fit_transform(K_temp)
     nb_item = K_temp.shape[0]
     K_norm = np.zeros((nb_item, nb_item))
@@ -47,8 +47,8 @@ def center_and_normalise_kernel(K_temp):
     return K_norm
 
 def make_mol_kernel(DB_version, DB_type, process_name):
-
-    """ Compute the molecules kernels
+    """ 
+    Compute the molecules kernels
 
     Calculate the ECFP (Morgan fingerprint) for each moleculte and compute the 
     Tanimoto Similarity between all of them.
@@ -89,7 +89,7 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
 
     # get the DBdataBase preprocessed
-
+    # dict_ind2mol is necessary to fill the fingerprints' matrix 
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
     dict_ligand = preprocessed_DB[0]
     dict_ind2mol = preprocessed_DB[4]
@@ -98,8 +98,10 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     nb_mol = len(list(dict_ligand.keys()))
     X_fingerprint = np.zeros((nb_mol, 1024), dtype=np.int32)
     list_fingerprint = []
-    for i in list(dict_ind2mol.keys()):
-        m = Chem.MolFromSmiles(dict_ligand[dict_ind2mol[i]])
+    # for i in list(dict_ind2mol.keys()):
+    for i in range(nb_mol):
+        dbid = dict_ind2mol[i]
+        m = Chem.MolFromSmiles(dict_ligand[dbid])
         list_fingerprint.append(AllChem.GetMorganFingerprint(m, 2))
         arr = np.zeros((1,))
         DataStructs.ConvertToNumpyArray(
@@ -140,11 +142,15 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
     "Calculate the ECFP (Morgan fingerprint) for each moleculte and compute \
-    the Tanimoto Similarity between all of them.")
+the Tanimoto Similarity between all of them.")
 
-    parser.add_argument("DB_version", type = str,
+    parser.add_argument("DB_version", type = str, 
+                        choices = ["drugbank_v5.1.1", "drugbank_v5.1.5"],
                         help = "the number of the DrugBank version, example: \
                         'drugbank_vX.X.X'")
+
+    #  choices = ["drugbank_v5.1.1",
+                        # "drugbank_v5.1.5"],
 
     # to change
     parser.add_argument("DB_type", type = str,
