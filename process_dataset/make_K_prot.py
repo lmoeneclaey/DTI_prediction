@@ -45,13 +45,12 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
     -------
     None
     """   
-    print("check - make_temp_Kprot")
 
     # pattern_name variable
     pattern_name = process_name + '_' + DB_type
     # data_dir variable 
     data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
-    
+
     #create LAkernel directory
     if not os.path.exists(root + data_dir + 'LAkernel/'):
         os.mkdir(root + data_dir + 'LAkernel/')
@@ -79,6 +78,7 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
                 ' >> ' + output_filename
             cmd = os.popen(com)
             cmd.read()
+        print("completed")
 
 def make_group_Kprot(DB_version, DB_type, process_name):
     """

@@ -87,11 +87,11 @@ def check_temp_Kprot(DB_version, DB_type, process_name):
             '_' + dbid + '.txt'
 
         if not os.path.isfile(output_filename):
-            list_.append(index)
-    print(list_)
+            list_.append(dbid)
+    print("list of uncompleted proteins", list_)
 
-    for index in list_:
-        make_temp_Kprot(DB_version, DB_type, process_name, index)
+#    for index in list_:
+#       make_temp_Kprot(DB_version, DB_type, process_name, index)
 
 def del_temp_Kprot(DB_version, DB_type, process_name, delete):
     """ 
