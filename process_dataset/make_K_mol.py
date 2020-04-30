@@ -58,8 +58,8 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     Write 3 files:
         - ..._X_ChemFingerprint.data : numpy array with each line representing \
             the ECFP for each molecule (1024 arguments)
-        - ..._Kmol.data : Tanimoto Similarity Kernel
-        - ..._Kmol_norm.data : Centered and Normalised Kernel
+        - ..._K_mol.data : Tanimoto Similarity Kernel
+        - ..._K_mol_norm.data : Centered and Normalised Kernel
 
     Parameters
     ----------
@@ -126,11 +126,11 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     # normalized or unnormalized
     for norm_type in ['norm', 'unnorm']:
         if norm_type == 'unnorm':
-            kernel_filename = root + data_dir + pattern_name + '_Kmol.data'
+            kernel_filename = root + data_dir + pattern_name + '_K_mol.data'
             pickle.dump(X, open(kernel_filename, 'wb'), protocol=2)
         elif norm_type == 'norm':
             K_norm = center_and_normalise_kernel(X)
-            kernel_norm_filename = root + data_dir + pattern_name + '_Kmol_norm.data'
+            kernel_norm_filename = root + data_dir + pattern_name + '_K_mol_norm.data'
             pickle.dump(K_norm, open(kernel_norm_filename, 'wb'), protocol=2)
 
     print(X[100, 100], K_norm[100, 100])

@@ -15,7 +15,7 @@ root = './../CFTR_PROJECT/'
 # But problem in compiling LAkernel-0.2 and LAkernel-0.3.2
 LAkernel_path = '/cbio/donnees/bplaye/LAkernel-0.2/LAkernel_direct'
 
-def make_temp_Kprot(DB_version, DB_type, process_name, index):
+def make_temp_K_prot(DB_version, DB_type, process_name, index):
     """ 
     Process the similarity of one particular protein with the others
 
@@ -80,15 +80,15 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
             cmd.read()
         print("completed")
 
-def make_group_Kprot(DB_version, DB_type, process_name):
+def make_group_K_prot(DB_version, DB_type, process_name):
     """
     Process the similarity between all the proteins with LAkernel
 
     Use make_K_mol.center_and_normalise_kernel()
 
     Write 2 files:
-        - ..._Kprot.data : LA Kernel
-        - ..._Kprot_norm.data : Centered and Normalised Kernel
+        - ..._K_prot.data : LA Kernel
+        - ..._K_prot_norm.data : Centered and Normalised Kernel
 
     Parameters
     ----------
@@ -138,11 +138,11 @@ def make_group_Kprot(DB_version, DB_type, process_name):
     # normalized or unnormalized
     for norm_type in ['norm', 'unnorm']:
         if norm_type == 'unnorm':
-            kernel_filename = root + data_dir + pattern_name + '_Kprot.data'
+            kernel_filename = root + data_dir + pattern_name + '_K_prot.data'
             pickle.dump(X, open(kernel_filename, 'wb'), protocol=2)
         elif norm_type == 'norm':
             K_norm = center_and_normalise_kernel(X)
-            kernel_filename = root + data_dir + pattern_name + '_Kprot_norm.data'
+            kernel_filename = root + data_dir + pattern_name + '_K_prot_norm.data'
             pickle.dump(K_norm, open(kernel_filename, 'wb'), protocol=2)
 
     print(X[100, 100], K_norm[100, 100])
@@ -176,7 +176,7 @@ if __name__ == "__main__":
     # need to change for the uniprotID
     parser.add_argument("-i", "--index", type = int,
                         help = "the index of the protein in question \
-                        exclusively for make_temp_Kprot()")
+                        exclusively for make_temp_K_prot()")
 
     # parser.add_argument("-v", "--verbosity", action = "store_true", 
                         # help = "increase output verbosity")
@@ -184,8 +184,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.action == "temp":
-        make_temp_Kprot(args.DB_version, args.DB_type, args.process_name, \
+        make_temp_K_prot(args.DB_version, args.DB_type, args.process_name, \
             args.index)
 
     elif args.action == "group":
-        make_group_Kprot(args.DB_version, args.DB_type, args.process_name)
+        make_group_K_prot(args.DB_version, args.DB_type, args.process_name)
