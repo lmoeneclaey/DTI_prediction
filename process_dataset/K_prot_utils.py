@@ -73,8 +73,8 @@ def check_temp_Kprot(DB_version, DB_type, process_name):
 
     # get the DBdataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[1]
-    dict_ind2prot = preprocessed_DB[3]
+    dict_target = preprocessed_DB[3]
+    dict_ind2prot = preprocessed_DB[4]
 
     nb_prot = len(list(dict_target.keys()))
 
@@ -121,8 +121,8 @@ def del_temp_Kprot(DB_version, DB_type, process_name, delete):
 
     # get the DBdataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[1]
-    dict_ind2prot = preprocessed_DB[3]
+    dict_target = preprocessed_DB[3]
+    dict_ind2prot = preprocessed_DB[4]
 
     nb_prot = len(list(dict_target.keys()))
 

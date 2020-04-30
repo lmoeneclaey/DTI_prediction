@@ -58,8 +58,8 @@ def make_temp_Kprot(DB_version, DB_type, process_name, index):
 
     # get the DataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[1]
-    dict_ind2prot = preprocessed_DB[3]
+    dict_target = preprocessed_DB[3]
+    dict_ind2prot = preprocessed_DB[4]
 
     # output_filename
     dbid = dict_ind2prot[index]
@@ -112,8 +112,8 @@ def make_group_Kprot(DB_version, DB_type, process_name):
 
     # get the DBdataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[1]
-    dict_ind2prot = preprocessed_DB[3]
+    dict_target = preprocessed_DB[3]
+    dict_ind2prot = preprocessed_DB[4]
 
     nb_prot = len(list(dict_target.keys()))
     X = np.zeros((nb_prot, nb_prot))

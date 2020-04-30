@@ -92,7 +92,7 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     # dict_ind2mol is necessary to fill the fingerprints' matrix 
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
     dict_ligand = preprocessed_DB[0]
-    dict_ind2mol = preprocessed_DB[4]
+    dict_ind2mol = preprocessed_DB[1]
 
     # get the ECFP fingerprints
     nb_mol = len(list(dict_ligand.keys()))
