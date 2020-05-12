@@ -6,9 +6,9 @@ import pickle
 from sklearn.svm import SVC
 
 from process_dataset.process_DB import get_DB
-# from make_K_train import ListInteractions, get_list_couples_train, make_K_train
-from make_K_train import ListInteractions, InteractionsTrainDataset, get_train_dataset, make_K_train
 from make_K_inter import get_K_mol_K_prot
+# from make_K_train import ListInteractions, get_list_couples_train, make_K_train
+from make_K_train import ListInteractions, InteractionsTrainDataset, make_K_train
 
 root = './../CFTR_PROJECT/'
 
@@ -42,23 +42,24 @@ if __name__ == "__main__":
     data_dir = 'data/' + args.DB_version + '/' + pattern_name + '/'
 
     #create directories
-    if not os.path.exists(root + data_dir + '/' + 'Classifiers'):
-        os.mkdir(root + data_dir + '/' + 'Classifiers')
-        print("Classifiers directory for ", pattern_name, ", ", args.DB_version,
+    if not os.path.exists(root + data_dir + '/' + 'CrossValidation'):
+        os.mkdir(root + data_dir + '/' + 'CrossValidation')
+        print("Cross Validation directory for ", pattern_name, ", ", args.DB_version,
         "created.")
     else:
-        print("Classifiers directory for ", pattern_name, ", ", args.DB_version,
+        print("Cross Validation directory for ", pattern_name, ", ", args.DB_version,
         "already exists.")
 
-    if not os.path.exists(root + data_dir + '/' + 'Classifiers/kronSVM'):
-        os.mkdir(root + data_dir + '/' + 'Classifiers/kronSVM')
-        print("kronSVM classifiers directory for ", pattern_name, ", ", args.DB_version,
+    if not os.path.exists(root + data_dir + '/' + 'CrossValidation/kronSVM'):
+        os.mkdir(root + data_dir + '/' + 'CrossValidation/kronSVM')
+        print("kronSVM cross validation directory for ", pattern_name, ", ", args.DB_version,
         "created.")
     else:
-        print("kronSVM classifiers directory for ", pattern_name, ", ", args.DB_version,
+        print("kronSVM cross validation directory for ", pattern_name, ", ", args.DB_version,
         "already exists.")
 
-    clf_dirname = root + data_dir + 'Classifiers/kronSVM/'
+    cv_dirname = root + data_dir + 'CrossValidation/'
+    kronsvm_cv_dirname = root + data_dir + 'CrossValidation/kronSVM/'
 
     C = 10.
 
@@ -67,24 +68,20 @@ if __name__ == "__main__":
     kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.process_name,
                                  args.norm)
 
-    list_seed = [71, 343, 928, 2027, 2]
-    list_clf = []
-    list_couples_of_clf, list_ind_false_inter = [], []
+    # Get the train datasets
+    train_folds = pickle.load(open(cv_dirname + pattern_name + '_train_folds.data',
+                              'rb'))
+    nb_folds = len(train_folds)
 
-    for seed in list_seed:
-        print("seed:", seed)
+    cv_list_clf = []
+    cv_list_couples_of_clf, list_ind_false_inter = [], []
 
-        # Create the train dataset
-        train_dataset = get_train_dataset(seed, preprocessed_DB)
-        # true_inter = train_dataset[0]
-        # false_inter = train_dataset[1]
+    for ifold in range(nb_folds):
+        print("fold:", ifold)
+
+        train_dataset = train_folds[ifold]
         true_inter = train_dataset.true_inter
         false_inter = train_dataset.false_inter
-
-        # Compute the kernel of interactions
-        # train_set = make_K_train(seed, preprocessed_DB, kernels)
-        # K_train = train_set[0] 
-        # y_train = train_set[1]
 
         K_train = make_K_train(train_dataset, preprocessed_DB, kernels)
         y_train = np.concatenate((true_inter.interaction_bool, 
@@ -97,38 +94,38 @@ if __name__ == "__main__":
         # Create the classifier
         clf = SVC(C=C, kernel='precomputed', probability=True, class_weight='balanced')
         clf.fit(K_train, y_train)
-        list_clf.append(clf)
+        cv_list_clf.append(clf)
 
         # the list of couples in the train set are necessary to compute the 
         # similarity kernel for the interactions that we want to predict 
         # true_inter = train_set[2]
         # false_inter = train_set[3]
         list_couples = true_inter.list_couples + false_inter.list_couples
-        list_couples_of_clf.append(list_couples)
+        cv_list_couples_of_clf.append(list_couples)
     
-    print("Classifiers done.")
+    print("Classifiers for the cross validation done.")
 
         # Optional
         # list_ind_false_inter.append(false_inter.ind_inter)
         
     # Classifier name
     if args.norm == True:
-        clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf_norm.data'
+        cv_clf_filename = kronsvm_cv_dirname + pattern_name + \
+        '_kronSVM_cv_list_clf_norm.data'
     else:
-        clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf.data'
+        cv_clf_filename = kronsvm_cv_dirname + pattern_name + \
+        '_kronSVM_cv_list_clf.data'
 
-    pickle.dump(list_clf, 
-                open(clf_filename, 'wb'),
+    pickle.dump(cv_list_clf, 
+                open(cv_clf_filename, 'wb'),
                 protocol=2)
 
     # Couples of the classifier
-    couples_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_couples_of_clf.data'
+    cv_couples_filename = kronsvm_cv_dirname + pattern_name + \
+        '_kronSVM_cv_list_couples_of_clf.data'
 
-    pickle.dump(list_couples_of_clf, 
-                open(couples_filename, 'wb'), 
+    pickle.dump(cv_list_couples_of_clf, 
+                open(cv_couples_filename, 'wb'), 
                 protocol=2)
     
-    print("Classifiers saved.")
+    print("Classifiers for the cross validation saved.")

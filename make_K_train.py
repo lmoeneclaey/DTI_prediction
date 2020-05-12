@@ -1,40 +1,63 @@
 import numpy as np
 
-from process_dataset.process_DB import get_DB
-from make_K_inter import get_K_mol_K_prot
+# from process_dataset.process_DB import get_DB
+# from make_K_inter import get_K_mol_K_prot
 
 root = './../CFTR_PROJECT/'
 
-def forbid_couple(couple, preprocessed_DB):
+class ListInteractions:
     """
-    Assign 0 to a couple in the matrix of interactions
+    Class defining the interactions between a list of proteins and molecules\
+        with:
+            - the actual list of tuple (protein, molecule)
+            - the corresponding boolean vector describing if the interaction \
+                exists or not
+            - the list of corresponding indices in the matrix of interaction
+    """
 
-    Parameters
-    ----------
-    couple : tuple 
-        (prot:DrugBankID, mol:DrugBankID)
-    preprocessed_DB : tuple of length 8
-        got with the function process_dataset.process_DB.get_DB()
+    def __init__(self, list_couples, interaction_bool, ind_inter):
+        self.list_couples =  list_couples
+        self.interaction_bool = interaction_bool
+        self.ind_inter = ind_inter
 
-    Returns
-    -------
-    preprocessed_DB
-        where intMat has been changed
-    """ 
-    dict_mol2ind = preprocessed_DB[2]
-    dict_prot2ind = preprocessed_DB[5]
-    intMat = preprocessed_DB[6]
+    def __add__(self, other):
+        total_list_couples = self.list_couples + other.list_couples
+        total_interaction_bool = np.concatenate((self.interaction_bool,
+                                        other.interaction_bool),
+                                        axis=0)
+        total_ind_inter = (np.concatenate((self.ind_inter[0], other.ind_inter[0]), 
+                                          axis=0),
+                           np.concatenate((self.ind_inter[1], other.ind_inter[1]),
+                                          axis=0))
 
-    if intMat[dict_prot2ind[couple[0]], dict_mol2ind[couple[1]]] == 0:
-        print('attention : forbidden couple ' + str(couple) + ' is already neg')
-    else:
-        intMat[dict_prot2ind[couple[0]], dict_mol2ind[couple[1]]] = 0
-    
-    preprocessed_DB[6] = intMat
+        return ListInteractions(total_list_couples, 
+                                total_interaction_bool,
+                                total_ind_inter)
 
-    return preprocessed_DB
+    def __radd__(self, other):
+        if other == 0:
+            return self
+        else:
+            return self.__add__(other)
+        
+    # def forbid(self, couple)
 
-def get_list_couples_train(seed, preprocessed_DB):
+class InteractionsTrainDataset:
+    """
+    Class definining a train data set including a number of "true" interactions
+    and the exact same number of "false" interactions.
+    So it is a list of two 'ListInteractions' objects.
+    """
+
+    def __init__(self, true_inter, false_inter):
+        self.true_inter = true_inter
+        self.false_inter = false_inter
+
+    # we should write a function that verifies that both true_inter and \
+    # false_inter are from the 'ListInteractions' class
+
+# def get_list_couples_train(seed, preprocessed_DB):
+def get_train_dataset(seed, preprocessed_DB):
     """ 
     Get the list of all the couples that are in the train:
         - the "true" (known) interactions (with indices ind_true_inter)
@@ -48,67 +71,72 @@ def get_list_couples_train(seed, preprocessed_DB):
 
     Returns
     -------
-    list_couples : list
-        List of all the couples in the train data set
-    y : list
-        results to predict
-    ind_true_inter : np.array
-    ind_false_inter : np.array
+    train_dataset : InteractionsTrainDataset
+        List of all the "true" interactions in a 'ListInteractions' class and \
+        all the "false" interactions, also in a 'ListInteractions' class. 
+    true_inter : ListInteractions
+        List of all the "true" interactions in the train dataset
+    false_inter : ListInteractions
+        List of all the "false" interactions in the train dataset
     """ 
 
     dict_ind2mol = preprocessed_DB[1]
     dict_ind2prot = preprocessed_DB[4]
     intMat = preprocessed_DB[6]
     list_interactions = preprocessed_DB[7]
-    print("0:", len(list_interactions))
 
-    # Set the seed
-    np.random.seed(seed)
-
+    # TRUE INTERACTIONS
     # get the interactions indices
     # ind_true_inter : indices where there is an interaction
-    # ind_false_inter : indices where there is not an interaction
     ind_true_inter = np.where(intMat == 1) 
     nb_true_inter = len(list_interactions)
-    all_ind_false_inter = np.where(intMat == 0)
-    nb_false_inter = len(all_ind_false_inter[0])
+
+    true_inter = ListInteractions(list_couples=list_interactions,
+                                  interaction_bool=np.array([1]*nb_true_inter),
+                                  ind_inter=ind_true_inter)
+
+    # "FALSE" INTERACTIONS
+    # get the interactions indices
+    # ind_false_inter : indices where there is not an interaction
+    ind_all_false_inter = np.where(intMat == 0)
+    nb_all_false_inter = len(ind_all_false_inter[0])
 
     # choose between all the "false" interactions, nb_true_interactions couples,
     # without replacement
-    mask = np.random.choice(np.arange(nb_false_inter), 
+    np.random.seed(seed)
+    mask = np.random.choice(np.arange(nb_all_false_inter), 
                             nb_true_inter,
                             replace=False)
 
     # get a new list with only the "false" interactions indices which will be \
-    # in the train data set
-    ind_false_inter = (all_ind_false_inter[0][mask], 
-                       all_ind_false_inter[1][mask])
+    # in the train dataset
+    ind_false_inter = (ind_all_false_inter[0][mask], 
+                       ind_all_false_inter[1][mask])
+    nb_false_inter = len(ind_false_inter[0])
 
-    # initialisation
-    list_couples, y = [], []
+    list_false_inter = []
+    for i in range(nb_false_inter):
+        list_false_inter.append((dict_ind2prot[ind_false_inter[0][i]],
+                                 dict_ind2mol[ind_false_inter[1][i]]))
 
-    # true interactions
-    for i in range(nb_true_inter):
-        list_couples.append((dict_ind2prot[ind_true_inter[0][i]], 
-                             dict_ind2mol[ind_true_inter[1][i]]))
-        y.append(1)
-    print("1:", len(list_couples))
+    false_inter = ListInteractions(list_couples=list_false_inter,
+                                   interaction_bool=np.array([0]*nb_false_inter),
+                                   ind_inter=ind_false_inter)
 
-    # the nb of "false" interactions in the set of couples is equal to the \
-    # number of true interactions 
-    for i in range(nb_true_inter):
-        list_couples.append((dict_ind2prot[ind_false_inter[0][i]],
-                            dict_ind2mol[ind_false_inter[1][i]]))
-        y.append(0)
+    print("list of all the couples done.")
 
-    y = np.array(y)
+    # train_dataset = [true_inter, false_inter]
+    train_dataset = InteractionsTrainDataset(true_inter=true_inter,
+                                             false_inter=false_inter)
+    print("Train dataset done.")
 
-    print("list of all the couples done")
-    return list_couples, y, ind_true_inter, ind_false_inter
+    # return true_inter, false_inter
+    return train_dataset
 
-def make_K_train(seed, preprocessed_DB, kernels, forbidden_list=None):
+# def make_K_train(seed, preprocessed_DB, kernels):
+def make_K_train(train_dataset, preprocessed_DB, kernels):
     """ 
-    Compute the interactions kernels for the train data set
+    Compute the interactions kernels for the train dataset
 
     Calculate them based on the kernels on proteins and on molecules.
 
@@ -117,7 +145,8 @@ def make_K_train(seed, preprocessed_DB, kernels, forbidden_list=None):
     Parameters
     ----------
     seed : int
-        seed for the "false" interactions in the train data set
+        seed for the "false" interactions in the train dataset
+    train_dataset : InteractionsTrainDataset
     DB_version : str
         string of the DrugBank version number
         format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
@@ -125,8 +154,6 @@ def make_K_train(seed, preprocessed_DB, kernels, forbidden_list=None):
         string of the DrugBank type
     process_name : str
         string of the process name ex: 'NNdti'
-    forbidden_list : list of tuples
-        if you want to forbid some couples as "true" interactions
 
     Returns
     -------
@@ -138,16 +165,19 @@ def make_K_train(seed, preprocessed_DB, kernels, forbidden_list=None):
     dict_mol2ind = preprocessed_DB[2]
     dict_prot2ind = preprocessed_DB[5]
 
-    # forbid some couples
-    if forbidden_list is not None:
-        for couple in forbidden_list:
-            corrected_preprocessed_DB = forbid_couple(couple, preprocessed_DB)
-            preprocessed_DB = corrected_preprocessed_DB
 
-    # get the train dataset
-    train_set = get_list_couples_train(seed,
-                                      preprocessed_DB)
-    list_couples = train_set[0]
+
+    # # get the train dataset
+    # train_set = get_list_couples_train(seed,
+    #                                   preprocessed_DB)
+    # true_inter = train_set[0]
+    # false_inter = train_set[1]
+    # true_inter = train_dataset[0]
+    # false_inter = train_dataset[1]
+    true_inter = train_dataset.true_inter
+    false_inter = train_dataset.false_inter
+
+    list_couples = true_inter.list_couples + false_inter.list_couples 
     nb_couples = len(list_couples)
 
     # get the kernels
@@ -169,4 +199,9 @@ def make_K_train(seed, preprocessed_DB, kernels, forbidden_list=None):
                 K_mol[ind1_mol, ind2_mol]
             K_train[j, i] = K_train[i, j]
 
+    # y_train = np.concatenate((true_inter.interaction_bool, 
+    #                          false_inter.interaction_bool),
+    #                          axis=0)
+
+    # return K_train, y_train, true_inter, false_inter
     return K_train

@@ -64,6 +64,4 @@ def make_Kcouple(x1, x2, K_mol, K_prot, dict_prot2ind, dict_mol2ind):
                     K_prot[dict_prot2ind[prot1], dict_prot2ind[prot2]]
     # in the case of train data, K_temp is "nb_sample_in_train * nb_sample_in_train"
     # in the case of test/val data, K_temp is "nb_sample_in_train * nb_sample_in_test/val"
-    return K_temp
-
-    
+    return K_temp  
