@@ -9,16 +9,16 @@ from sklearn.preprocessing import KernelCenterer
 
 from process_DB import get_DB
 from make_K_mol import center_and_normalise_kernel
-from make_K_prot import make_temp_Kprot
+from make_K_prot import make_temp_K_prot
 
 root = './../CFTR_PROJECT/'
 
-def make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2):
+def make_range_temp_K_prot(DB_version, DB_type, process_name, i1, i2):
     """ 
-    Process make_temp_Kprot() for a range of proteins
+    Process make_temp_K_prot() for a range of proteins
 
     The proteins got keys between *i1* and *i2* in the dict_target dictionary
-    See the description of make_temp_Kprot for more details 
+    See the description of make_temp_K_prot for more details 
 
     Parameters
     ----------
@@ -41,15 +41,15 @@ def make_range_temp_Kprot(DB_version, DB_type, process_name, i1, i2):
 
     for index in range(i1, i2):
         print(index)
-        make_temp_Kprot(DB_version, DB_type, process_name, index)
+        make_temp_K_prot(DB_version, DB_type, process_name, index)
 
 
-def check_temp_Kprot(DB_version, DB_type, process_name):
+def check_temp_K_prot(DB_version, DB_type, process_name):
     """ 
-    Check and process make_temp_Kprot() for the proteins for which the \
+    Check and process make_temp_K_prot() for the proteins for which the \
     LAkernel has not been processed.
 
-    See the description of make_temp_Kprot for more details 
+    See the description of make_temp_K_prot for more details 
 
     Parameters
     ----------
@@ -73,8 +73,8 @@ def check_temp_Kprot(DB_version, DB_type, process_name):
 
     # get the DBdataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[1]
-    dict_ind2prot = preprocessed_DB[3]
+    dict_target = preprocessed_DB[3]
+    dict_ind2prot = preprocessed_DB[4]
 
     nb_prot = len(list(dict_target.keys()))
 
@@ -91,9 +91,9 @@ def check_temp_Kprot(DB_version, DB_type, process_name):
     print("list of uncompleted proteins", list_)
 
 #    for index in list_:
-#       make_temp_Kprot(DB_version, DB_type, process_name, index)
+#       make_temp_K_prot(DB_version, DB_type, process_name, index)
 
-def del_temp_Kprot(DB_version, DB_type, process_name, delete):
+def del_temp_K_prot(DB_version, DB_type, process_name, delete):
     """ 
     Check (and -optional- delete) LAkernel output files which are not completed.  
 
@@ -121,8 +121,8 @@ def del_temp_Kprot(DB_version, DB_type, process_name, delete):
 
     # get the DBdataBase preprocessed
     preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[1]
-    dict_ind2prot = preprocessed_DB[3]
+    dict_target = preprocessed_DB[3]
+    dict_ind2prot = preprocessed_DB[4]
 
     nb_prot = len(list(dict_target.keys()))
 
@@ -178,15 +178,15 @@ if __name__ == "__main__":
     # need to change for the uniprotID
     parser.add_argument("-i1", "--index1", type = int,
                         help = "the range of the protein in question, \
-                        exclusively for make_range_temp_Kprot()")
+                        exclusively for make_range_temp_K_prot()")
     
     parser.add_argument("-i2", "--index2", type = int,
                         help = "the range of the protein in question, \
-                        exclusively for make_range_temp_Kprot()")
+                        exclusively for make_range_temp_K_prot()")
 
     parser.add_argument("--delete", action="store_true",
                         help = "whether or not to delete the file, exclusively \
-                        for del_temp_Kprot()")
+                        for del_temp_K_prot()")
 
     # parser.add_argument("-v", "--verbosity", action = "store_true", 
                         # help = "increase output verbosity")
@@ -194,12 +194,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.action == "temp_range":
-        make_range_temp_Kprot(args.DB_version, args.DB_type, args.process_name,\
+        make_range_temp_K_prot(args.DB_version, args.DB_type, args.process_name,\
             args.index1, args.index2)
 
     elif args.action == "check":
-        check_temp_Kprot(args.DB_version, args.DB_type, args.process_name)
+        check_temp_K_prot(args.DB_version, args.DB_type, args.process_name)
     
     elif args.action == "del":
-        del_temp_Kprot(args.DB_version, args.DB_type, args.process_name, \
+        del_temp_K_prot(args.DB_version, args.DB_type, args.process_name, \
             args.delete)

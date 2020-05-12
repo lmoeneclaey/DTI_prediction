@@ -339,12 +339,13 @@ def get_all_DrugBank_fasta(DB_version, DB_type):
     for dbid in sorted(dict_uniprot2seq.keys()):
         dict_uniprot2seq_sorted[dbid] = dict_uniprot2seq[dbid]
 
-    # sorted by UniProtID then DrugBankID
+    # list_inter got some duplicates due to the fasta file
+    list_inter_unique = set(list_inter)
+    # list_inter sorted by UniProtID then DrugBankID
     list_inter_sorted = \
-        sorted(list_inter, key=lambda dbid: (dbid[0], dbid[1]))
+        sorted(list_inter_unique , key=lambda dbid: (dbid[0], dbid[1]))
 
     return dict_uniprot2seq_sorted, list_inter_sorted
-
 
 def process_DB(DB_version, DB_type, process_name):
     """ 
@@ -522,22 +523,25 @@ def get_DB(DB_version, DB_type, process_name):
 
     dict_ligand = pickle.load(open(root + data_dir + pattern_name + 
     '_dict_DBid2smiles.data', 'rb'))
-    dict_target = pickle.load(open(root + data_dir + pattern_name + 
-    '_dict_uniprot2fasta.data', 'rb'))
-
-    intMat = np.load(root + data_dir + pattern_name + '_intMat.npy')
-    
     dict_ind2mol = pickle.load(open(root + data_dir + pattern_name + 
     '_dict_ind2mol.data', 'rb'))
     dict_mol2ind = pickle.load(open(root + data_dir + pattern_name + 
     '_dict_mol2ind.data', 'rb'))
-    dict_prot2ind = pickle.load(open(root + data_dir + pattern_name + 
-    '_dict_prot2ind.data', 'rb'))
+
+    dict_target = pickle.load(open(root + data_dir + pattern_name + 
+    '_dict_uniprot2fasta.data', 'rb'))
     dict_ind2prot = pickle.load(open(root + data_dir + pattern_name + 
     '_dict_ind2prot.data', 'rb'))
+    dict_prot2ind = pickle.load(open(root + data_dir + pattern_name + 
+    '_dict_prot2ind.data', 'rb'))
 
-    return dict_ligand, dict_target, intMat, dict_ind2prot, \
-         dict_ind2mol, dict_prot2ind, dict_mol2ind
+    intMat = np.load(root + data_dir + pattern_name + '_intMat.npy')
+    list_interactions = pickle.load(open(root + data_dir + pattern_name +
+                '_list_interactions.data',
+                'rb')) 
+
+    return dict_ligand,  dict_ind2mol, dict_mol2ind, dict_target, dict_ind2prot,\
+         dict_prot2ind, intMat, list_interactions  
 
 if __name__ == "__main__":
 
