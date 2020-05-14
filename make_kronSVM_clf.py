@@ -64,6 +64,8 @@ if __name__ == "__main__":
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type, args.process_name)
 
+    # introduce part where we orphan etc ...
+
     kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.process_name,
                                  args.norm)
 
@@ -92,7 +94,6 @@ if __name__ == "__main__":
                                   axis=0)
 
         print("Training dataset's kernel of interactions prepared.")
-        # We should add the list of forbidden
 
         # Create the classifier
         clf = SVC(C=C, kernel='precomputed', probability=True, class_weight='balanced')

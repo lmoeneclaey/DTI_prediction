@@ -5,43 +5,6 @@ import numpy as np
 
 root = './../CFTR_PROJECT/'
 
-class ListInteractions:
-    """
-    Class defining the interactions between a list of proteins and molecules\
-        with:
-            - the actual list of tuple (protein, molecule)
-            - the corresponding boolean vector describing if the interaction \
-                exists or not
-            - the list of corresponding indices in the matrix of interaction
-    """
-
-    def __init__(self, list_couples, interaction_bool, ind_inter):
-        self.list_couples =  list_couples
-        self.interaction_bool = interaction_bool
-        self.ind_inter = ind_inter
-
-    def __add__(self, other):
-        total_list_couples = self.list_couples + other.list_couples
-        total_interaction_bool = np.concatenate((self.interaction_bool,
-                                        other.interaction_bool),
-                                        axis=0)
-        total_ind_inter = (np.concatenate((self.ind_inter[0], other.ind_inter[0]), 
-                                          axis=0),
-                           np.concatenate((self.ind_inter[1], other.ind_inter[1]),
-                                          axis=0))
-
-        return ListInteractions(total_list_couples, 
-                                total_interaction_bool,
-                                total_ind_inter)
-
-    def __radd__(self, other):
-        if other == 0:
-            return self
-        else:
-            return self.__add__(other)
-        
-    # def forbid(self, couple)
-
 class InteractionsTrainDataset:
     """
     Class definining a train data set including a number of "true" interactions
@@ -55,6 +18,25 @@ class InteractionsTrainDataset:
 
     # we should write a function that verifies that both true_inter and \
     # false_inter are from the 'ListInteractions' class
+
+def correct_unproven_interactions(interaction, preprocessed_DB):
+    """
+    Correct 1 to 0 in the matrix of interactions, interactions that haven't \
+    been proven experimentally.
+
+    Parameters
+    ----------
+    interaction : tuple of length 2
+        (UniprotID, DrugbankID)
+    preprocessed_DB : tuple of length 8
+        got with the function process_dataset.process_DB.get_DB()
+
+    Returns
+    -------
+    corrected_preprocessed_DB : tuple of length 8 
+    """
+
+
 
 # def get_list_couples_train(seed, preprocessed_DB):
 def get_train_dataset(seed, preprocessed_DB):
@@ -164,8 +146,6 @@ def make_K_train(train_dataset, preprocessed_DB, kernels):
     # preprocessed_DB = get_DB(DB_version, DB_type, process_name)
     dict_mol2ind = preprocessed_DB[2]
     dict_prot2ind = preprocessed_DB[5]
-
-
 
     # # get the train dataset
     # train_set = get_list_couples_train(seed,
