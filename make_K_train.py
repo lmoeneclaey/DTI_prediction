@@ -1,5 +1,6 @@
 import numpy as np
 
+from process_dataset.DB_utils import ListInteractions
 # from process_dataset.process_DB import get_DB
 # from make_K_inter import get_K_mol_K_prot
 

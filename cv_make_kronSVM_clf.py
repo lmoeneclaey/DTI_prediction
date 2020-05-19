@@ -5,10 +5,12 @@ import pickle
 
 from sklearn.svm import SVC
 
+from process_dataset.DB_utils import ListInteractions 
 from process_dataset.process_DB import get_DB
 from make_K_inter import get_K_mol_K_prot
-# from make_K_train import ListInteractions, get_list_couples_train, make_K_train
-from make_K_train import ListInteractions, InteractionsTrainDataset, make_K_train
+from make_K_train import InteractionsTrainDataset, make_K_train
+
+from cv_get_folds import get_train_folds
 
 root = './../CFTR_PROJECT/'
 
@@ -69,8 +71,9 @@ if __name__ == "__main__":
                                  args.norm)
 
     # Get the train datasets
-    train_folds = pickle.load(open(cv_dirname + pattern_name + '_train_folds.data',
-                              'rb'))
+    train_folds = get_train_folds(args.DB_version, args.DB_type, args.process_name)
+    # train_folds = pickle.load(open(cv_dirname + pattern_name + '_train_folds.data',
+                            #   'rb'))
     nb_folds = len(train_folds)
 
     cv_list_clf = []

@@ -5,9 +5,11 @@ import os
 
 from sklearn.svm import SVC
 
+from process_dataset.DB_utils import ListInteractions
 from process_dataset.process_DB import get_DB
 from make_K_inter import get_K_mol_K_prot
 from cv_make_K_test import make_K_test
+from cv_get_folds import get_test_folds
 
 root = './../CFTR_PROJECT/'
 
@@ -38,15 +40,9 @@ if __name__ == "__main__":
     # data_dir variable 
     data_dir = 'data/' + args.DB_version + '/' + pattern_name + '/'
 
-    #create directories
-    if not os.path.exists(root + data_dir + '/' + 'CrossValidation'):
-        os.mkdir(root + data_dir + '/' + 'CrossValidation')
-        print("Cross Validation directory for ", pattern_name, ", ", args.DB_version,
-        "created.")
-    else:
-        print("Cross Validation directory for ", pattern_name, ", ", args.DB_version,
-        "already exists.")
+    cv_dirname = root + data_dir + 'CrossValidation/'
 
+    #create prediction output directory
     if not os.path.exists(root + data_dir + '/' + 'CrossValidation/kronSVM'):
         os.mkdir(root + data_dir + '/' + 'CrossValidation/kronSVM')
         print("kronSVM cross validation directory for ", pattern_name, ", ", args.DB_version,
@@ -55,7 +51,6 @@ if __name__ == "__main__":
         print("kronSVM cross validation directory for ", pattern_name, ", ", args.DB_version,
         "already exists.")
 
-    cv_dirname = root + data_dir + 'CrossValidation/'
     kronsvm_cv_dirname = root + data_dir + 'CrossValidation/kronSVM/'
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type, args.process_name)
@@ -66,15 +61,16 @@ if __name__ == "__main__":
                                args.norm)
 
     # Get the test datasets
-    test_folds = pickle.load(open(cv_dirname + pattern_name + '_test_folds.data',
-                              'rb'))
+    test_folds = get_test_folds(args.DB_version, args.DB_type, args.process_name)
+    # test_folds = pickle.load(open(cv_dirname + pattern_name + '_test_folds.data',
+                            #   'rb'))
     nb_folds = len(test_folds)
 
     # get the classifiers
     if args.norm == True:
         cv_clf_filename = kronsvm_cv_dirname + pattern_name + \
         '_kronSVM_cv_list_clf_norm.data'
-        output_filename = kronsvm_cv_dirname + pattern_name + '_kronSVM_norm_cv_test_pred.data'
+        output_filename = kronsvm_cv_dirname + pattern_name + '_kronSVM_cv_test_pred_norm.data'
     else:
         cv_clf_filename = kronsvm_cv_dirname + pattern_name + \
         '_kronSVM_cv_list_clf.data'

@@ -1,3 +1,5 @@
+import numpy as np
+
 class Ligands:
     """
     Class the list of ligands, going to be used in the classifiers:

@@ -5,8 +5,8 @@ import pickle
 
 from rdkit import Chem
 
-from get_molecules_smiles import get_all_DrugBank_smiles
-from get_proteins_fastas import get_all_DrugBank_fasta
+# from get_molecules_smiles import get_all_DrugBank_smiles
+# from get_proteins_fastas import get_all_DrugBank_fasta
 
 root = "./../CFTR_PROJECT/"
 

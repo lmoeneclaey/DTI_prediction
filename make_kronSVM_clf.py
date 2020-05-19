@@ -5,9 +5,9 @@ import pickle
 
 from sklearn.svm import SVC
 
+from process_dataset.DB_utils import ListInteractions 
 from process_dataset.process_DB import get_DB
-# from make_K_train import ListInteractions, get_list_couples_train, make_K_train
-from make_K_train import ListInteractions, InteractionsTrainDataset, get_train_dataset, make_K_train
+from make_K_train import InteractionsTrainDataset, get_train_dataset, make_K_train
 from make_K_inter import get_K_mol_K_prot
 
 root = './../CFTR_PROJECT/'
