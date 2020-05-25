@@ -5,18 +5,23 @@ import pickle
 
 from rdkit import Chem
 
-# from get_molecules_smiles import get_all_DrugBank_smiles
-# from get_proteins_fastas import get_all_DrugBank_fasta
+# errors : "Unable to import ..."
+# I think it's due to the fact that we settle "./../DTI_prediction/" as working directory
+# but we should find a solution LATER for this pb
+# but so far it works, do not care about the error 
+from process_dataset.DB_utils import Drugs, Proteins, Interactions, FormattedDB
+from process_dataset.get_molecules_smiles import get_all_DrugBank_smiles
+from process_dataset.get_proteins_fastas import get_all_DrugBank_fasta
 
 root = "./../CFTR_PROJECT/"
 
-def process_DB(DB_version, DB_type, process_name):
+def process_DB(DB_version, DB_type):
     """ 
     Process the DrugBank database
 
-    The aim is to have the molecules, the proteins and the interactions with \
+    The aim is to have the drugs, the proteins and the interactions with \
         these filters:
-        - small molecules targets
+        - small proteins
         - molecules with know Smiles, loadable with Chem, µM between 100 and 800
         - proteins with all known aa in list, known fasta, and length < 1000
 
@@ -43,28 +48,24 @@ def process_DB(DB_version, DB_type, process_name):
     ----------
     DB_version : str
         string of the DrugBank version number
-        format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
+        format : "drugbank_vX.X.X" example : "drugbank_v5.1.1"
     DB_type : str
-        string of the DrugBank type
-    process_name : str
-        string of the process name ex: 'NNdti'
+        string of the DrugBank type example : 'S0h'
 
     Returns
     -------
     None
     """
 
-    # pattern_name variable
-    pattern_name = process_name + '_' + DB_type
     # data_dir variable 
-    data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
+    data_dir = 'data/' + DB_version + '/' + DB_type + '/'
 
     # create directory
-    if not os.path.exists(root + 'data/' + DB_version + '/' + pattern_name):
-        os.mkdir(root + 'data/' + DB_version + '/' + pattern_name)
-        print("Directory", pattern_name, "for",  DB_version, "created")
+    if not os.path.exists(root + data_dir):
+        os.mkdir(root + data_dir)
+        print("Directory", DB_type, "for",  DB_version, "created")
     else: 
-        print("Directory", pattern_name, "for",  DB_version, " already exists")
+        print("Directory", DB_type, "for",  DB_version, " already exists")
 
     dict_id2smile = get_all_DrugBank_smiles(DB_version,
                                             DB_type)
@@ -88,35 +89,37 @@ def process_DB(DB_version, DB_type, process_name):
     for dbid in sorted(dict_id2smile_inter.keys()):
         dict_id2smile_inter_sorted[dbid] = dict_id2smile_inter[dbid]
 
+    preprocessed_data_dir = root + data_dir + 'preprocessed/'
+
     pickle.dump(dict_id2smile_inter_sorted,
-                open(root + data_dir + pattern_name +
+                open(preprocessed_data_dir + DB_type +
                  '_dict_DBid2smiles.data',\
                 'wb'))
     pickle.dump(dict_uniprot2fasta_inter,
-                open(root + data_dir + pattern_name + 
+                open(preprocessed_data_dir + DB_type + 
                 '_dict_uniprot2fasta.data',\
                 'wb'))
     pickle.dump(list_interactions,
-                open(root + data_dir + pattern_name +
+                open(preprocessed_data_dir + DB_type +
                 '_list_interactions.data',
                 'wb'))
 
     # tsv files
     dict_ind2prot, dict_prot2ind, dict_ind2mol, dict_mol2ind = {}, {}, {}, {}
     
-    f = open(root + data_dir + pattern_name + '_interactions.tsv', 'w')
+    f = open(preprocessed_data_dir + DB_type + '_interactions.tsv', 'w')
     for couple in list_interactions:
         f.write(couple[0] + '\t' + couple[1] + '\n')
     f.close()
 
-    f = open(root + data_dir + pattern_name + '_uniprot2fasta.tsv', 'w')
+    f = open(preprocessed_data_dir + DB_type + '_uniprot2fasta.tsv', 'w')
     for ip, prot in enumerate(list(dict_uniprot2fasta_inter.keys())):
         f.write(prot + '\t' + dict_uniprot2fasta_inter[prot] + '\n')
         dict_ind2prot[ip] = prot
         dict_prot2ind[prot] = ip
     f.close()
 
-    f = open(root + data_dir + pattern_name + '_DBid2smiles.tsv', 'w')
+    f = open(preprocessed_data_dir + DB_type + '_DBid2smiles.tsv', 'w')
     for im, mol in enumerate(list(dict_id2smile_inter_sorted.keys())):
         f.write(mol + '\t' + dict_id2smile_inter_sorted[mol] + '\n')
         dict_ind2mol[im] = mol
@@ -124,34 +127,35 @@ def process_DB(DB_version, DB_type, process_name):
     f.close()
 
     # Matrix of interactions
+    # should not be created 
     intMat = np.zeros((len(list(dict_uniprot2fasta_inter.keys())),
                        len(list(dict_id2smile_inter_sorted.keys()))),
                       dtype=np.int32)
     for couple in list_interactions:
         intMat[dict_prot2ind[couple[0]], dict_mol2ind[couple[1]]] = 1
-    np.save(root + data_dir + pattern_name + '_intMat', intMat)
+    np.save(preprocessed_data_dir + DB_type + '_intMat', intMat)
 
     # Python files for kernels
     pickle.dump(dict_ind2prot,
-                open(root + data_dir + pattern_name +
+                open(preprocessed_data_dir + DB_type +
                 '_dict_ind2prot.data', 'wb'), 
                 protocol=2)
     pickle.dump(dict_prot2ind,
-                open(root + data_dir + pattern_name +
+                open(preprocessed_data_dir + DB_type +
                 '_dict_prot2ind.data', 'wb'), 
                 protocol=2)
     pickle.dump(dict_ind2mol,
-                open(root + data_dir + pattern_name + 
+                open(preprocessed_data_dir + DB_type + 
                 '_dict_ind2mol.data', 'wb'), 
                 protocol=2)
     pickle.dump(dict_mol2ind,
-                open(root + data_dir + pattern_name + 
+                open(preprocessed_data_dir + DB_type + 
                 '_dict_mol2ind.data', 'wb'), 
                 protocol=2)
 
     # save the python object formatted_DB
 
-def get_DB(DB_version, DB_type, process_name):
+def get_DB(DB_version, DB_type):
     """ 
     Load the preprocessed DrugBank database
     
@@ -169,50 +173,76 @@ def get_DB(DB_version, DB_type, process_name):
 
     Returns
     -------
-    dict_ligand dict keys : DrugBankID values : smile
-    dict_target dict keys : UniprotID values : fasta
+    dict_drug dict keys : DrugBankID values : smile
+    dict_protein dict keys : UniprotID values : fasta
 
     dict_ind2mol dict keys : ind values : DrugBankID
     dict_mol2ind dict keys : DrugBankID values : ind
     dict_ind2_prot dict keys : ind values : UniprotID
     dict_prot2ind dict keys : UniprotID values : ind    
     
-    dict_intMat : matrix of interaction
+    dict_intMat : matrix of interactions
+    list_interactions : list of interactions
     """
 
-    # pattern_name variable
-    pattern_name = process_name + '_' + DB_type
     # data_dir variables 
-    data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
+    data_dir = 'data/' + DB_version + '/' + DB_type + '/'
+    # preprocessed data directory
+    preprocessed_data_dir = root + data_dir + 'preprocessed/'
 
-    dict_ligand = pickle.load(open(root + data_dir + pattern_name + 
+    dict_drug = pickle.load(open(preprocessed_data_dir + DB_type + 
     '_dict_DBid2smiles.data', 'rb'))
-    dict_ind2mol = pickle.load(open(root + data_dir + pattern_name + 
+    dict_ind2mol = pickle.load(open(preprocessed_data_dir + DB_type + 
     '_dict_ind2mol.data', 'rb'))
-    dict_mol2ind = pickle.load(open(root + data_dir + pattern_name + 
+    dict_mol2ind = pickle.load(open(preprocessed_data_dir + DB_type + 
     '_dict_mol2ind.data', 'rb'))
 
-    dict_target = pickle.load(open(root + data_dir + pattern_name + 
+    DB_drugs = Drugs(dict_drug = dict_drug,
+                     dict_ind2mol = dict_ind2mol,
+                     dict_mol2ind = dict_mol2ind)
+
+    dict_protein = pickle.load(open(preprocessed_data_dir + DB_type + 
     '_dict_uniprot2fasta.data', 'rb'))
-    dict_ind2prot = pickle.load(open(root + data_dir + pattern_name + 
+    dict_ind2prot = pickle.load(open(preprocessed_data_dir + DB_type + 
     '_dict_ind2prot.data', 'rb'))
-    dict_prot2ind = pickle.load(open(root + data_dir + pattern_name + 
+    dict_prot2ind = pickle.load(open(preprocessed_data_dir + DB_type + 
     '_dict_prot2ind.data', 'rb'))
 
-    intMat = np.load(root + data_dir + pattern_name + '_intMat.npy')
-    list_interactions = pickle.load(open(root + data_dir + pattern_name +
-                '_list_interactions.data',
-                'rb')) 
+    DB_proteins = Proteins(dict_protein = dict_protein,
+                           dict_ind2prot = dict_ind2prot,
+                           dict_prot2ind = dict_prot2ind)
 
-    return dict_ligand,  dict_ind2mol, dict_mol2ind, dict_target, dict_ind2prot,\
-         dict_prot2ind, intMat, list_interactions  
+    # intMat = np.load(preprocessed_data_dir + DB_type + '_intMat.npy')
+    # ind_inter = np.where(intMat == 1) 
+
+    # Good to create the numpy array at the beginning of the procession of the 
+    # DB database
+    list_interactions = pickle.load(open(preprocessed_data_dir + DB_type +
+                '_list_interactions.data',
+                'rb'))
+    
+    interaction_bool = np.array([1]*len(list_interactions),).reshape(-1, 1)
+
+    interactions = np.concatenate((np.array(list_interactions), 
+                                  interaction_bool),
+                                  axis = 1)
+
+    DB_interactions = Interactions(couples = interactions)
+
+    DB = FormattedDB(drugs = DB_drugs,
+                     proteins = DB_proteins,
+                     interactions = DB_interactions)
+
+    # return dict_drug,  dict_ind2mol, dict_mol2ind, dict_protein, dict_ind2prot,\
+    #      dict_prot2ind, intMat, list_interactions 
+    return DB 
 
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser("This script processes the DrugBank \
-database in order to have the molecules, the proteins and their \
-interactions with these filters:\n\
-    - small molecules targets\n\
+    database in order to have the drugs, the proteins and their \
+    interactions with these filters:\n\
+    - small proteins\n\
     - molecules with know Smiles, loadable with Chem, µM between 100 and 800\n\
     - proteins with all known aa in list, known fasta, and length < 1000\n")
 
@@ -241,5 +271,4 @@ interactions with these filters:\n\
                 #    args.process_name)
     
     process_DB(args.DB_version,
-               args.DB_type,
-               args.process_name)
+               args.DB_type)
