@@ -1,10 +1,12 @@
 import numpy as np
 
+from process_dataset.DB_utils import Drugs, Proteins, FormattedDB
+
 root = './../CFTR_PROJECT/'
 
 def get_list_couples_predict_mol(dbid, preprocessed_DB):
 
-    dict_ind2prot = preprocessed_DB[4]
+    dict_ind2prot = preprocessed_DB.proteins.dict_ind2prot
 
     list_couples_predict = []
     for key in range(len(dict_ind2prot)):

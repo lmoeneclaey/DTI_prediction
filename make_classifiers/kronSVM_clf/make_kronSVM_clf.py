@@ -1,4 +1,5 @@
 import argparse
+import copy
 import numpy as np
 import os
 import pickle
@@ -7,6 +8,7 @@ from sklearn.svm import SVC
 
 from process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
 from process_dataset.process_DB import get_DB
+from process_dataset.correct_interactions import get_orphan
 from make_kernels.get_kernels import get_K_mol_K_prot
 
 from make_K_train import InteractionsTrainDataset, get_train_dataset, make_K_train
@@ -34,6 +36,10 @@ if __name__ == "__main__":
     parser.add_argument("--norm", default = False, action="store_true", 
                         help = "where or not to normalize the kernels, False \
                         by default")
+
+    parser.add_argument("--orphan", type = str, action='append',
+                        help = "molecules which you want to orphanize in the \
+                            train data set")
 
     args = parser.parse_args()
 
@@ -71,7 +77,6 @@ if __name__ == "__main__":
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
-    # introduce part where we orphan etc ...
 
     kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.norm)
 
@@ -79,16 +84,20 @@ if __name__ == "__main__":
     list_clf = []
     list_couples_of_clf, list_ind_false_inter = [], []
 
+    corrected_DB = copy.deepcopy(preprocessed_DB)
+    for dbid in args.orphan:
+        corrected_DB = get_orphan(preprocessed_DB=corrected_DB, dbid=dbid)
+        
     for seed in list_seed:
         print("seed:", seed)
 
         # Create the train dataset
-        train_dataset = get_train_dataset(seed, preprocessed_DB)
+        train_dataset = get_train_dataset(seed, corrected_DB)
         true_inter = train_dataset.true_inter
         false_inter = train_dataset.false_inter
 
         # Compute the kernel of interactions
-        K_train = make_K_train(train_dataset, preprocessed_DB, kernels)
+        K_train = make_K_train(train_dataset, corrected_DB, kernels)
         y_train = np.concatenate((true_inter.interaction_bool, 
                                   false_inter.interaction_bool),
                                   axis=0)
