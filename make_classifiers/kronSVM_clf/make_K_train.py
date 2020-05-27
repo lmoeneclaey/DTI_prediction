@@ -1,6 +1,6 @@
 import numpy as np
 
-from process_dataset.DB_utils import Couples
+from DTI_prediction.process_dataset.DB_utils import Couples
 # from process_dataset.process_DB import get_DB
 # from make_K_inter import get_K_mol_K_prot
 
@@ -78,7 +78,7 @@ def get_train_dataset(seed, preprocessed_DB):
                                  dict_ind2mol[ind_false_inter[1][i]]))
 
     false_inter = Couples(list_couples=list_false_inter,
-                          interaction_bool=np.array([0]*nb_false_inter))
+                          interaction_bool=np.array([0]*nb_false_inter).reshape(-1,1))
 
     print("list of all the couples done.")
 
@@ -117,8 +117,8 @@ def make_K_train(train_dataset, preprocessed_DB, kernels):
     """
 
     # get the preprocessed DBdatabase 
-    dict_mol2ind = preprocessed_DB.drugs.dict_ind2mol
-    dict_prot2ind = preprocessed_DB.proteins.dict_ind2prot
+    dict_mol2ind = preprocessed_DB.drugs.dict_mol2ind
+    dict_prot2ind = preprocessed_DB.proteins.dict_prot2ind
 
     # # get the train dataset
     true_inter = train_dataset.true_inter

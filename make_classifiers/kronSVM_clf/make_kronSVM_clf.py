@@ -6,12 +6,12 @@ import pickle
 
 from sklearn.svm import SVC
 
-from process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
-from process_dataset.process_DB import get_DB
-from process_dataset.correct_interactions import get_orphan
-from make_kernels.get_kernels import get_K_mol_K_prot
+from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
+from DTI_prediction.process_dataset.process_DB import get_DB
+from DTI_prediction.process_dataset.correct_interactions import get_orphan
+from DTI_prediction.make_kernels.get_kernels import get_K_mol_K_prot
 
-from make_K_train import InteractionsTrainDataset, get_train_dataset, make_K_train
+from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset, get_train_dataset, make_K_train
 
 root = './../CFTR_PROJECT/'
 
@@ -44,31 +44,31 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # pattern_name variable
-    pattern_name = args.process_name + '_' + args.DB_type
+    pattern_name =  args.DB_type + '_' + args.process_name
     # data_dir variable 
-    data_dir = 'data/' + args.DB_version + '/' + pattern_name + '/'
+    data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name + '/'
 
     #create directories
-    if not os.path.exists(data_dir):
-        os.mkdir(root + 'data/' + args.DB_version + '/' + pattern_name)
+    if not os.path.exists(root + 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name):
+        os.mkdir(root + 'data/' + args.DB_version + '/' + '/' + args.DB_type + '/' +  pattern_name)
         print("Directory", pattern_name, "for",  args.DB_version, "created")
     else: 
         print("Directory", pattern_name, "for",  args.DB_version, " already exists")
 
     if not os.path.exists(root + data_dir + '/' + 'classifiers'):
         os.mkdir(root + data_dir + '/' + 'classifiers')
-        print("Classifiers directory for ", pattern_name, ", ", args.DB_version,
+        print("Classifiers directory for ", pattern_name, ",", args.DB_version,
         "created.")
     else:
-        print("Classifiers directory for ", pattern_name, ", ", args.DB_version,
+        print("Classifiers directory for ", pattern_name, ",", args.DB_version,
         "already exists.")
 
     if not os.path.exists(root + data_dir + '/' + 'classifiers/kronSVM'):
         os.mkdir(root + data_dir + '/' + 'classifiers/kronSVM')
-        print("kronSVM classifiers directory for ", pattern_name, ", ", args.DB_version,
+        print("kronSVM classifiers directory for ", pattern_name, ",", args.DB_version,
         "created.")
     else:
-        print("kronSVM classifiers directory for ", pattern_name, ", ", args.DB_version,
+        print("kronSVM classifiers directory for ", pattern_name, ",", args.DB_version,
         "already exists.")
 
     clf_dirname = root + data_dir + 'classifiers/kronSVM/'
@@ -86,8 +86,8 @@ if __name__ == "__main__":
 
     corrected_DB = copy.deepcopy(preprocessed_DB)
     for dbid in args.orphan:
-        corrected_DB = get_orphan(preprocessed_DB=corrected_DB, dbid=dbid)
-        
+        corrected_DB = get_orphan(DB=corrected_DB, dbid=dbid)
+
     for seed in list_seed:
         print("seed:", seed)
 
@@ -106,7 +106,7 @@ if __name__ == "__main__":
 
         # Create the classifier
         clf = SVC(C=C, kernel='precomputed', probability=True, class_weight='balanced')
-        clf.fit(K_train, y_train)
+        clf.fit(K_train, y_train.ravel())
         list_clf.append(clf)
 
         # the list of couples in the train set are necessary to compute the 

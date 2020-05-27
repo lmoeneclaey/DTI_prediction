@@ -9,9 +9,9 @@ from rdkit import Chem
 # I think it's due to the fact that we settle "./../DTI_prediction/" as working directory
 # but we should find a solution LATER for this pb
 # but so far it works, do not care about the error 
-from process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
-from process_dataset.get_molecules_smiles import get_all_DrugBank_smiles
-from process_dataset.get_proteins_fastas import get_all_DrugBank_fasta
+from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
+from DTI_prediction.process_dataset.get_molecules_smiles import get_all_DrugBank_smiles
+from DTI_prediction.process_dataset.get_proteins_fastas import get_all_DrugBank_fasta
 
 root = "./../CFTR_PROJECT/"
 

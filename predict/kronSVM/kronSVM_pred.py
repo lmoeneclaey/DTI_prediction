@@ -38,9 +38,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # pattern_name variable
-    pattern_name = args.process_name + '_' + args.DB_type
+    pattern_name = args.DB_type + '_' + args.process_name
     # data_dir variable 
-    data_dir = 'data/' + args.DB_version + '/' + pattern_name + '/'
+    data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name + '/'
 
     #create directory
     if not os.path.exists(root + data_dir + '/' + 'Predictions'):

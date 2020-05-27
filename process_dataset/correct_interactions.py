@@ -1,6 +1,6 @@
 import numpy as np
 
-from process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
+from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
 
 def get_orphan(DB, dbid):
     """
