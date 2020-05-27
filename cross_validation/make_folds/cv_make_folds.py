@@ -5,6 +5,7 @@ import pickle
 
 import sklearn.model_selection as model_selection
 
+from process_dataset.DB_utils import FormattedDB
 from process_dataset.process_DB import get_DB
 from process_dataset.DB_utils import ListInteractions 
 from make_K_train import InteractionsTrainDataset
@@ -30,10 +31,10 @@ def make_folds(seed, preprocessed_DB):
     ind_false_inter : np.array
     """ 
 
-    dict_ind2mol = preprocessed_DB[1]
-    dict_ind2prot = preprocessed_DB[4]
-    intMat = preprocessed_DB[6]
-    list_interactions = preprocessed_DB[7]
+    dict_ind2mol = preprocessed_DB.drugs.dict_ind2mol
+    dict_ind2prot = preprocessed_DB.proteins.dict_ind2prot
+    intMat = preprocessed_DB.intMat
+    list_interactions = preprocessed_DB.interactions.couples
 
     # Set the different seeds
     nb_folds = 5

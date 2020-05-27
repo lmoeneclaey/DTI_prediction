@@ -9,7 +9,7 @@ from rdkit import Chem
 # I think it's due to the fact that we settle "./../DTI_prediction/" as working directory
 # but we should find a solution LATER for this pb
 # but so far it works, do not care about the error 
-from process_dataset.DB_utils import Drugs, Proteins, Interactions, FormattedDB
+from process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
 from process_dataset.get_molecules_smiles import get_all_DrugBank_smiles
 from process_dataset.get_proteins_fastas import get_all_DrugBank_fasta
 
@@ -89,7 +89,9 @@ def process_DB(DB_version, DB_type):
     for dbid in sorted(dict_id2smile_inter.keys()):
         dict_id2smile_inter_sorted[dbid] = dict_id2smile_inter[dbid]
 
+    # preprocessed directory
     preprocessed_data_dir = root + data_dir + 'preprocessed/'
+    os.mkdir(preprocessed_data_dir)
 
     pickle.dump(dict_id2smile_inter_sorted,
                 open(preprocessed_data_dir + DB_type +
@@ -223,15 +225,16 @@ def get_DB(DB_version, DB_type):
     
     interaction_bool = np.array([1]*len(list_interactions),).reshape(-1, 1)
 
-    interactions = np.concatenate((np.array(list_interactions), 
-                                  interaction_bool),
-                                  axis = 1)
+    # interactions = np.concatenate((np.array(list_interactions), 
+    #                               interaction_bool),
+    #                               axis = 1)
 
-    DB_interactions = Interactions(couples = interactions)
+    DB_couples = Couples(list_couples = list_interactions,
+                         interaction_bool = interaction_bool)
 
     DB = FormattedDB(drugs = DB_drugs,
                      proteins = DB_proteins,
-                     interactions = DB_interactions)
+                     couples = DB_couples)
 
     # return dict_drug,  dict_ind2mol, dict_mol2ind, dict_protein, dict_ind2prot,\
     #      dict_prot2ind, intMat, list_interactions 

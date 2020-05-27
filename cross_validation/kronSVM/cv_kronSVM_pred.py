@@ -53,12 +53,11 @@ if __name__ == "__main__":
 
     kronsvm_cv_dirname = root + data_dir + 'CrossValidation/kronSVM/'
 
-    preprocessed_DB = get_DB(args.DB_version, args.DB_type, args.process_name)
-    dict_ind2mol = preprocessed_DB[1]
-    dict_ind2prot = preprocessed_DB[4]
+    preprocessed_DB = get_DB(args.DB_version, args.DB_type)
+    dict_ind2mol = preprocessed_DB.drugs.dict_ind2mol
+    dict_ind2prot = preprocessed_DB.proteins.dict_ind2prot
 
-    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.process_name,
-                               args.norm)
+    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.norm)
 
     # Get the test datasets
     test_folds = get_test_folds(args.DB_version, args.DB_type, args.process_name)

@@ -5,10 +5,11 @@ import pickle
 
 from sklearn.svm import SVC
 
-from process_dataset.DB_utils import ListInteractions 
+from process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
 from process_dataset.process_DB import get_DB
+from make_kernels.get_kernels import get_K_mol_K_prot
+
 from make_K_train import InteractionsTrainDataset, get_train_dataset, make_K_train
-from make_K_inter import get_K_mol_K_prot
 
 root = './../CFTR_PROJECT/'
 
@@ -42,32 +43,37 @@ if __name__ == "__main__":
     data_dir = 'data/' + args.DB_version + '/' + pattern_name + '/'
 
     #create directories
-    if not os.path.exists(root + data_dir + '/' + 'Classifiers'):
-        os.mkdir(root + data_dir + '/' + 'Classifiers')
+    if not os.path.exists(data_dir):
+        os.mkdir(root + 'data/' + args.DB_version + '/' + pattern_name)
+        print("Directory", pattern_name, "for",  args.DB_version, "created")
+    else: 
+        print("Directory", pattern_name, "for",  args.DB_version, " already exists")
+
+    if not os.path.exists(root + data_dir + '/' + 'classifiers'):
+        os.mkdir(root + data_dir + '/' + 'classifiers')
         print("Classifiers directory for ", pattern_name, ", ", args.DB_version,
         "created.")
     else:
         print("Classifiers directory for ", pattern_name, ", ", args.DB_version,
         "already exists.")
 
-    if not os.path.exists(root + data_dir + '/' + 'Classifiers/kronSVM'):
-        os.mkdir(root + data_dir + '/' + 'Classifiers/kronSVM')
+    if not os.path.exists(root + data_dir + '/' + 'classifiers/kronSVM'):
+        os.mkdir(root + data_dir + '/' + 'classifiers/kronSVM')
         print("kronSVM classifiers directory for ", pattern_name, ", ", args.DB_version,
         "created.")
     else:
         print("kronSVM classifiers directory for ", pattern_name, ", ", args.DB_version,
         "already exists.")
 
-    clf_dirname = root + data_dir + 'Classifiers/kronSVM/'
+    clf_dirname = root + data_dir + 'classifiers/kronSVM/'
 
     C = 10.
 
-    preprocessed_DB = get_DB(args.DB_version, args.DB_type, args.process_name)
+    preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
     # introduce part where we orphan etc ...
 
-    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.process_name,
-                                 args.norm)
+    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.norm)
 
     list_seed = [71, 343, 928, 2027, 2]
     list_clf = []
@@ -78,16 +84,10 @@ if __name__ == "__main__":
 
         # Create the train dataset
         train_dataset = get_train_dataset(seed, preprocessed_DB)
-        # true_inter = train_dataset[0]
-        # false_inter = train_dataset[1]
         true_inter = train_dataset.true_inter
         false_inter = train_dataset.false_inter
 
         # Compute the kernel of interactions
-        # train_set = make_K_train(seed, preprocessed_DB, kernels)
-        # K_train = train_set[0] 
-        # y_train = train_set[1]
-
         K_train = make_K_train(train_dataset, preprocessed_DB, kernels)
         y_train = np.concatenate((true_inter.interaction_bool, 
                                   false_inter.interaction_bool),
@@ -108,9 +108,6 @@ if __name__ == "__main__":
         list_couples_of_clf.append(list_couples)
     
     print("Classifiers done.")
-
-        # Optional
-        # list_ind_false_inter.append(false_inter.ind_inter)
         
     # Classifier name
     if args.norm == True:
