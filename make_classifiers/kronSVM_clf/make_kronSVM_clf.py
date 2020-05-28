@@ -57,10 +57,10 @@ if __name__ == "__main__":
 
     if not os.path.exists(root + data_dir + '/' + 'classifiers'):
         os.mkdir(root + data_dir + '/' + 'classifiers')
-        print("Classifiers directory for ", pattern_name, ",", args.DB_version,
+        print("Classifiers directory for", pattern_name, ",", args.DB_version,
         "created.")
     else:
-        print("Classifiers directory for ", pattern_name, ",", args.DB_version,
+        print("Classifiers directory for", pattern_name, ",", args.DB_version,
         "already exists.")
 
     if not os.path.exists(root + data_dir + '/' + 'classifiers/kronSVM'):

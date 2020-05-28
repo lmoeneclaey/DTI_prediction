@@ -44,7 +44,8 @@ def get_orphan(DB, dbid):
     return corrected_DB
 
 
-def correct_unproven_interactions(interaction, DB):
+# Maybe later change to have smaller functions
+def correct_interactions(DB, corrected_interactions):
     """
     Correct 1 to 0 in the matrix of interactions, interactions that haven't \
     been proven experimentally.
@@ -60,3 +61,5 @@ def correct_unproven_interactions(interaction, DB):
     -------
     corrected_DB : tuple of length 8 
     """
+
+    # plusieurs cas  

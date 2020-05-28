@@ -14,6 +14,26 @@ class Drugs:
 
         self.nb = len(list(self.dict_drug.keys()))
 
+def check_drug(dbid, drugs):
+    """
+    Function which returns a boolean if the dbid is in the list of the drug
+
+    Parameters
+    ----------
+    dbid : str
+    drugs : Drugs
+
+    Returns
+    -------
+    bool
+    """
+
+    list_dbid = list(drugs.dict_drug.keys())
+
+    return dbid in list_dbid
+
+
+
 class Proteins:
     """
     Class defining the list of proteins, going to be used in the classifiers:
@@ -28,6 +48,23 @@ class Proteins:
 
         self.nb = len(list(self.dict_protein.keys()))
 
+def check_protein(dbid, proteins):
+    """
+    Function which returns a boolean if the dbid is in the list of the drug
+
+    Parameters
+    ----------
+    dbid : str
+    proteins : Proteins
+
+    Returns
+    -------
+    bool
+    """
+
+    list_dbid = list(proteins.dict_protein.keys())
+
+    return dbid in list_dbid
 
 class Couples:
     """
@@ -42,7 +79,6 @@ class Couples:
 
         self.list_couples = list_couples
         self.interaction_bool = interaction_bool
-
 
         self.array = np.concatenate((np.array(self.list_couples), 
                                      self.interaction_bool),

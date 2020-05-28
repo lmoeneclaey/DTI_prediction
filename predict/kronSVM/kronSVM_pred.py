@@ -1,13 +1,17 @@
 import argparse 
+import pandas as pd
 import pickle
 import numpy as np
 import os
 
 from sklearn.svm import SVC
 
-from process_dataset.process_DB import get_DB
-from make_K_inter import get_K_mol_K_prot
-from make_K_predict import make_K_predict
+from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
+from DTI_prediction.process_dataset.DB_utils import check_drug, check_protein
+from DTI_prediction.process_dataset.process_DB import get_DB
+from DTI_prediction.make_kernels.get_kernels import get_K_mol_K_prot
+from DTI_prediction.predict.kronSVM.make_K_predict import make_K_predict_drug, make_K_predict_prot
+from DTI_prediction.predict.predictions_postprocess import predictions_postprocess_drug
 
 root = './../CFTR_PROJECT/'
 
@@ -37,45 +41,50 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # raw data directory
+    raw_data_dir = 'data/' + args.DB_version + '/raw/'
     # pattern_name variable
     pattern_name = args.DB_type + '_' + args.process_name
     # data_dir variable 
     data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name + '/'
 
     #create directory
-    if not os.path.exists(root + data_dir + '/' + 'Predictions'):
-        os.mkdir(root + data_dir + '/' + 'Predictions')
-        print("Predictions directory for ", pattern_name, ", ", args.DB_version,
+    if not os.path.exists(root + data_dir + '/' + 'predictions'):
+        os.mkdir(root + data_dir + '/' + 'predictions')
+        print("Predictions directory for", pattern_name, ",", args.DB_version,
         "created.")
     else:
-        print("Predictions directory for ", pattern_name, ", ", args.DB_version,
+        print("Predictions directory for", pattern_name, ",", args.DB_version,
         "already exists.")
 
-    pred_dirname = root + data_dir + 'Predictions/'
-    clf_dirname = root + data_dir + 'Classifiers/kronSVM/'
+    pred_dirname = root + data_dir + 'predictions/'
+    clf_dirname = root + data_dir + 'classifiers/kronSVM/'
 
-    preprocessed_DB = get_DB(args.DB_version, args.DB_type, args.process_name)
-    dict_ind2mol = preprocessed_DB[1]
-    nb_mol = len(dict_ind2mol)
-    dict_ind2prot = preprocessed_DB[4]
-    nb_prot = len(dict_ind2prot)
+    preprocessed_DB = get_DB(args.DB_version, args.DB_type)
+    
+    dict_ind2mol = preprocessed_DB.drugs.dict_ind2mol
+    nb_mol = preprocessed_DB.drugs.nb 
+    
+    dict_ind2prot = preprocessed_DB.proteins.dict_ind2prot
+    nb_prot = preprocessed_DB.proteins.nb
 
-    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.process_name,
-                               args.norm)
-
-    # add forbidden_list
+    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.norm)
 
     # get the classifiers
     if args.norm == True:
         clf_filename = clf_dirname + pattern_name + \
         '_kronSVM_list_clf_norm.data'
         output_filename = pred_dirname + pattern_name + '_kronSVM_norm_' + \
-            args.dbid + '_pred.data'
+            args.dbid + '_pred_output.data'
+        clean_filename = pred_dirname + pattern_name + "_kronSVM_norm_" + \
+            args.dbid + '_pred_clean.csv'
     else:
         clf_filename = clf_dirname + pattern_name + \
         '_kronSVM_list_clf.data'
         output_filename = pred_dirname + pattern_name + '_kronSVM_' + args.dbid\
-        + '_pred.data'
+        + '_pred_output.data'
+        clean_filename = pred_dirname + pattern_name + '_kronSVM_' +args.dbid\
+        + '_pred_clean.tsv'
     list_clf = pickle.load(open(clf_filename, 'rb'))
     nb_clf = len(list_clf)
 
@@ -83,21 +92,52 @@ if __name__ == "__main__":
         '_kronSVM_list_couples_of_clf.data'
     list_couples_of_clf = pickle.load(open(couples_filename, 'rb'))
 
-    # initialisation
+    # You want to predict the targets of a drug
     if args.dbid[:2] == 'DB':
-        # The molecule is a drug
+        
+        if check_drug(args.dbid, preprocessed_DB.drugs)==False:
+            print("The drug you want to predict the targets is not in the database.")
+
         pred = np.zeros((nb_prot, nb_clf))
+
+        for clf_id in range(nb_clf):
+            K_predict = make_K_predict_drug(args.dbid,
+                                            preprocessed_DB,
+                                            kernels,
+                                            list_couples_of_clf[clf_id])
+
+            pred[:, clf_id] = list_clf[clf_id].predict_proba(K_predict)[:,1]
+
+    # You want to predict the liganfs of a protein
     else:
-        # The molecule is a protein
+
+        if check_protein(args.dbid, preprocessed_DB.proteins)==False:
+            print("The protein you want to predict the ligands is not in \
+                    the database.")
+
         pred = np.zeros((nb_mol, nb_clf))
 
-    for clf_id in range(nb_clf):
-        K_predict = make_K_predict(args.dbid,
-                                   preprocessed_DB,
-                                   kernels,
-                                   list_couples_of_clf[clf_id])
-        pred[:, clf_id] = list_clf[clf_id].predict_proba(K_predict)[:,1]
-        print("Prediction for (classifier)", clf_id, "done.") 
+        for clf_id in range(nb_clf):
+            K_predict = make_K_predict_prot(args.dbid,
+                                            preprocessed_DB,
+                                            kernels,
+                                            list_couples_of_clf[clf_id])
+            pred[:, clf_id] = list_clf[clf_id].predict_proba(K_predict)[:,1]
+        
+    print("Prediction for (classifier)", clf_id, "done.") 
 
     pickle.dump(pred, open(output_filename, 'wb'))
+
+    raw_df = pd.read_csv(root + raw_data_dir + \
+                         'drugbank_small_molecule_target_polypeptide_ids.csv/all.csv',
+                         sep=",")
+    raw_df = raw_df.fillna('')
+
+    pred_clean = predictions_postprocess_drug(predictions_output=pred,
+                                              DB=preprocessed_DB,
+                                              raw_proteins_df=raw_df)
+
+    pred_clean_final = pred_clean.drop_duplicates()
+    pred_clean_final.to_csv(clean_filename)
+
     print("Predictions done and saved.")
