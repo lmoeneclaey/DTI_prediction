@@ -32,8 +32,6 @@ def check_drug(dbid, drugs):
 
     return dbid in list_dbid
 
-
-
 class Proteins:
     """
     Class defining the list of proteins, going to be used in the classifiers:
@@ -100,6 +98,36 @@ class Couples:
         else:
             return self.__add__(other)
 
+def get_couples_from_array(couples_array):
+
+    list_couples = couples_array[:,:2].to_list()
+    interaction_bool = couples_array[:,3]
+    interaction_bool_int = interaction_bool.astype(np.int)
+
+    couples = Couples(list_couples = list_couples,
+                      interaction_bool = interaction_bool_int)
+
+    return couples
+
+def get_subset_couples(couples, subset_index):
+    """
+    Get a subset of a 'Couples' object from a subset_index (n_subset,) with n_subset \
+        < n_couples
+
+    Parameters
+    ----------
+    couples : Couples
+    subset_index : numpy array
+    """
+
+    subset_arr = couples.array[subset_index]
+    list_subset = subset_arr[:,:2].tolist()
+
+    subset = Couples(list_couples = list_subset,
+                     interaction_bool = couples.interaction_bool[subset_index])
+    
+    return subset
+
 def get_intMat(drugs, proteins, couples):
     """
     Get the matrix of interactions from a dictionary of drugs, a dictionary of \
@@ -135,11 +163,14 @@ def get_interactions(couples):
     """
 
     interactions_ind = np.where(couples.array[:,2]=='1')
-    interactions_arr = couples.array[interactions_ind]
 
-    list_interactions = interactions_arr[:,:2].tolist()
-    interactions = Couples(list_couples = list_interactions,
-                           interaction_bool = couples.interaction_bool[interactions_ind])
+    interactions = get_subset_couples(couples, interactions_ind)
+
+    # interactions_arr = couples.array[interactions_ind]
+
+    # list_interactions = interactions_arr[:,:2].tolist()
+    # interactions = Couples(list_couples = list_interactions,
+    #                        interaction_bool = couples.interaction_bool[interactions_ind])
 
     if np.all(interactions.interaction_bool == 1)==False:
         print("There is an error in the function get_interactions()")

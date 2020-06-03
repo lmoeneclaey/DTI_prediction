@@ -5,16 +5,14 @@ import pickle
 
 import sklearn.model_selection as model_selection
 
-from process_dataset.DB_utils import FormattedDB
-from process_dataset.process_DB import get_DB
-from process_dataset.DB_utils import ListInteractions 
-from make_K_train import InteractionsTrainDataset
+from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB, get_subset_couples
+from DTI_prediction.process_dataset.process_DB import get_DB
+from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset
 
 root = './../CFTR_PROJECT/'
 
-def make_folds(seed, preprocessed_DB):
+def make_folds(seed, nb_clf, preprocessed_DB):
     """ 
-
     Parameters
     ----------
     seed : number
@@ -34,37 +32,30 @@ def make_folds(seed, preprocessed_DB):
     dict_ind2mol = preprocessed_DB.drugs.dict_ind2mol
     dict_ind2prot = preprocessed_DB.proteins.dict_ind2prot
     intMat = preprocessed_DB.intMat
-    list_interactions = preprocessed_DB.interactions.couples
+    interactions = preprocessed_DB.interactions
 
     # Set the different seeds
     nb_folds = 5
     true_seed = 62
     false_seed = 53
 
-    # TRUE INTERACTIONS
-    
-    # get the interactions indices
-    # ind_true_inter : indices where there is an interaction
-    ind_true_inter = np.where(intMat == 1) 
-    nb_true_inter = len(list_interactions)
-    list_interactions_arr = np.array(list_interactions)
+    # "TRUE" INTERACTIONS (TRAIN AND TEST)
+    nb_true_inter = preprocessed_DB.interactions.nb
 
     # initialisation
+    # train_true_folds is a list (length: nb_folds) of Couples (length: ((nb_folds-1)/nb_folds)*nb_true_inter)
     train_true_folds = []
+    # test_true_folds is a list (length: nb_folds) of Couples (length: (1/nb_folds)*nb_true_inter)
     test_true_folds = []
 
-    skf_true = model_selection.KFold(shuffle=True, random_state=true_seed)
+    skf_true = model_selection.KFold(shuffle=True,random_state=true_seed)
     for train_index, test_index in skf_true.split(range(nb_true_inter)):
     
-        train_fold = ListInteractions(list_couples=list_interactions_arr[train_index].tolist(),
-                                      interaction_bool=np.array([1]*len(train_index)),
-                                      ind_inter=(ind_true_inter[0][train_index],
-                                                 ind_true_inter[1][train_index]))
-    
-        test_fold = ListInteractions(list_couples=list_interactions_arr[test_index].tolist(),
-                                     interaction_bool=np.array([1]*len(test_index)),
-                                     ind_inter=(ind_true_inter[0][test_index],
-                                                ind_true_inter[1][test_index]))
+        train_fold = get_subset_couples(interactions,
+                                        train_index)
+
+        test_fold = get_subset_couples(interactions,
+                                       test_index)
     
         train_true_folds.append(train_fold)
         test_true_folds.append(test_fold)
@@ -80,60 +71,72 @@ def make_folds(seed, preprocessed_DB):
     # without replacement
     np.random.seed(seed)
     mask = np.random.choice(np.arange(nb_all_false_inter), 
-                            nb_true_inter,
+                            (nb_clf+1)*nb_true_inter,
                             replace=False)
+    mask_test = mask[:nb_true_inter]
+    mask_train = mask[nb_true_inter:]
+
+    ## TEST "FALSE" INTERACTIONS
 
     # get a new list with only the "false" interactions indices which will be \
     # in the train data set
-    ind_false_inter = (ind_all_false_inter[0][mask], 
-                       ind_all_false_inter[1][mask])
-    nb_false_inter = len(ind_false_inter[0])
+    ind_test_false_inter = (ind_all_false_inter[0][mask_test], 
+                            ind_all_false_inter[1][mask_test])
+    nb_test_false_inter = len(ind_test_false_inter[0])
 
-    list_false_inter = []
-    for i in range(nb_false_inter):
-        list_false_inter.append((dict_ind2prot[ind_false_inter[0][i]],
-                                 dict_ind2mol[ind_false_inter[1][i]]))
-    list_false_inter_arr = np.array(list_false_inter)
+    list_test_false_inter = []
+    for i in range(nb_test_false_inter):
+        list_test_false_inter.append((dict_ind2prot[ind_test_false_inter[0][i]],
+                                    dict_ind2mol[ind_test_false_inter[1][i]]))
+    list_test_false_inter_arr = np.array(list_test_false_inter)
 
     # initialisation
-    train_false_folds = []
+    # test_false_folds is a list (length: nb_folds) of Couples (length: (1/nb_folds)*nb_true_inter)
     test_false_folds = []
 
     skf_false = model_selection.KFold(nb_folds, shuffle=True, random_state=false_seed)
-    for train_index, test_index in skf_false.split(range(nb_false_inter)):
+    for train_index, test_index in skf_false.split(range(nb_test_false_inter)):
     
-        train_fold = ListInteractions(list_couples=list_false_inter_arr[train_index].tolist(),
-                                    interaction_bool=np.array([0]*len(train_index)),
-                                    ind_inter=(ind_false_inter[0][train_index],
-                                                ind_false_inter[1][train_index]))
+        test_fold = Couples(list_couples=list_test_false_inter_arr[test_index].tolist(),
+                            interaction_bool=np.array([0]*len(test_index)).reshape(-1,1))
     
-        test_fold = ListInteractions(list_couples=list_false_inter_arr[test_index].tolist(),
-                                    interaction_bool=np.array([0]*len(test_index)),
-                                    ind_inter=(ind_false_inter[0][test_index],
-                                                ind_false_inter[1][test_index]))
-    
-        train_false_folds.append(train_fold)
         test_false_folds.append(test_fold)
 
-    print("List of the couples for all the folds done.")
+    ## TRAIN "FALSE" INTERACTIONS
 
-    # CONCATENATION
-    # Concatenate "true" and "false" interacitons to create the final train and 
-    # test folds
+    # initialisation
+    # train_false_folds is a list (length: nb_clfs) of Couples (length: ((nb_folds-1)/nb_folds)*nb_true_inter)
+    train_false_folds = []
+    
+    # get the number of true interaction in one train fold
+    nb_true_inter_per_clf = np.int(((nb_folds-1)/nb_folds)*nb_true_inter)
 
-    train_folds = []
-    test_folds = []
-    for ifold in range(nb_folds):
+    # get (nb_clf) samples of mask_train of length nb_true_inter_per_clf
+    mask_train_per_clf = []
+    for iclf in range(nb_clf):
+        mask_train_per_clf.append(mask_train[(iclf*nb_true_inter_per_clf):((iclf+1)*nb_true_inter_per_clf)])
+    
+    for iclf in range(nb_clf):
+    
+        mask_train = mask_train_per_clf[iclf]
+    
+        ind_train_false_inter = (ind_all_false_inter[0][mask_train], 
+                                 ind_all_false_inter[1][mask_train])
+        nb_train_false_inter = len(ind_train_false_inter[0])
+
+        list_train_false_inter = []
+        for i in range(nb_train_false_inter):
+            list_train_false_inter.append((dict_ind2prot[ind_train_false_inter[0][i]],
+                                        dict_ind2mol[ind_train_false_inter[1][i]]))
+    
+        train_fold = Couples(list_couples=list_train_false_inter,
+                             interaction_bool=np.array([0]*nb_train_false_inter).reshape(-1,1))
         
-        train_ifold = InteractionsTrainDataset(true_inter=train_true_folds[ifold],
-                                               false_inter=train_false_folds[ifold])    
-        train_folds.append(train_ifold)
-
-        test_folds.append(test_true_folds[ifold] + test_false_folds[ifold])
+        train_false_folds.append(train_fold)
 
     print("Train folds and test folds prepared.")
 
-    return train_folds, test_folds
+    return train_true_folds, test_true_folds, train_false_folds, test_false_folds
 
 if __name__ == "__main__":
 
@@ -149,117 +152,77 @@ if __name__ == "__main__":
                         help = "the DrugBank type, example: 'S0h'")
 
     parser.add_argument("process_name", type = str,
-                        help = "the name of the process, helper to find the \
-                        data again, example = 'DTI'")
+                        help = "the name of the process, helper to find the data again, example = 'DTI'")
+
+    parser.add_argument("nb_clf", type = int,
+                        help = "number of classifiers for one prediction, example = 5")
 
     args = parser.parse_args()
 
     # pattern_name variable
-    pattern_name = args.process_name + '_' + args.DB_type
+    pattern_name =  args.DB_type + '_' + args.process_name
     # data_dir variable 
-    data_dir = 'data/' + args.DB_version + '/' + pattern_name + '/'
+    data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name + '/'
 
     #create directories
-    if not os.path.exists(root + data_dir + '/' + 'CrossValidation'):
-        os.mkdir(root + data_dir + '/' + 'CrossValidation')
-        print("Cross Validation directory for ", pattern_name, ", ", args.DB_version,
+    if not os.path.exists(root + data_dir + '/' + 'cross_validation'):
+        os.mkdir(root + data_dir + '/' + 'cross_validation')
+        os.mkdir(root + data_dir + '/' + 'cross_validation' + '/' + 'test_folds')
+        os.mkdir(root + data_dir + '/' + 'cross_validation' + '/' + 'train_folds')
+        print("Cross validation directory for ", pattern_name, ", ", args.DB_version,
         "created.")
     else:
-        print("Cross Validation directory for ", pattern_name, ", ", args.DB_version,
+        print("Cross validation directory for ", pattern_name, ", ", args.DB_version,
         "already exists.")
 
-    cv_dirname = root + data_dir + 'CrossValidation/'
+    cv_dirname = root + data_dir + '/cross_validation/'
 
-    preprocessed_DB = get_DB(args.DB_version, args.DB_type, args.process_name)
+    preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
     seed = 242
-    train_folds, test_folds = make_folds(seed, preprocessed_DB)
+    folds = make_folds(seed, args.nb_clf, preprocessed_DB)
 
-    nb_folds = len(train_folds)
+    train_true_folds = folds[0]
+    print(len(train_true_folds))
+    test_true_folds = folds[1]
+    print(len(test_true_folds))
+    train_false_folds = folds[2]
+    print(len(train_false_folds))
+    test_false_folds = folds[3]
+    print(len(test_false_folds))
+
+    nb_folds = len(train_true_folds)
 
     # Save test folds
 
-    test_folds_list_couples = []
-    test_folds_interaction_bool = []
-    test_folds_ind_inter = []
+    test_folds_array_filename = cv_dirname + 'test_folds/' \
+        + pattern_name + '_test_folds_array.data'
 
+    test_folds = []
+    test_folds_array = []
     for ifold in range(nb_folds):
-        test_folds_list_couples.append(test_folds[ifold].list_couples)
-        test_folds_interaction_bool.append(test_folds[ifold].interaction_bool)
-        test_folds_ind_inter.append(test_folds[ifold].ind_inter)
 
-    if not os.path.exists(cv_dirname + '/' + 'test_folds'):
-        os.mkdir(cv_dirname + '/' + 'test_folds')
-        print("Test folds directory for ", pattern_name, ", ", args.DB_version, 
-        "created.")
-    else:
-        print("Test folds directory for ", pattern_name, ", ", args.DB_version, 
-        "already exists.")
+        test_folds.append(test_true_folds[ifold] + test_false_folds[ifold])
+        test_folds_array.append(test_folds[ifold].array)
 
-    test_folds_list_couples_filename = cv_dirname + 'test_folds/' \
-        + pattern_name + '_test_folds_list_couples.data'
-    test_folds_interaction_bool_filename = cv_dirname + 'test_folds/' \
-        + pattern_name + '_test_folds_interaction_bool.data'
-    test_folds_ind_inter_filename = cv_dirname + 'test_folds/' \
-        + pattern_name + '_test_folds_ind_inter.data'
+    pickle.dump(test_folds_array, 
+                open(test_folds_array_filename, 'wb'))
 
-    pickle.dump(test_folds_list_couples, 
-                open(test_folds_list_couples_filename, 'wb'))
-    pickle.dump(test_folds_interaction_bool, 
-                open(test_folds_interaction_bool_filename, 'wb'))
-    pickle.dump(test_folds_ind_inter, 
-                open(test_folds_ind_inter_filename, 'wb'))
+    # Save train folds
 
-    # Save train folds 
+    train_true_folds_array_filename = cv_dirname + 'train_folds/' + pattern_name + '_train_true_folds_array.data'
+    train_false_folds_array_filename = cv_dirname + 'train_folds/' + pattern_name + '_train_false_folds_array.data'
 
-    train_true_folds_list_couples = []
-    train_true_folds_interaction_bool = []
-    train_true_folds_ind_inter = []
-
-    train_false_folds_list_couples = []
-    train_false_folds_interaction_bool = []
-    train_false_folds_ind_inter = []
-
+    train_true_folds_array = []
     for ifold in range(nb_folds):
-    
-        train_true_folds_list_couples.append(train_folds[ifold].true_inter.list_couples)
-        train_true_folds_interaction_bool.append(train_folds[ifold].true_inter.interaction_bool)
-        train_true_folds_ind_inter.append(train_folds[ifold].true_inter.ind_inter)
-    
-        train_false_folds_list_couples.append(train_folds[ifold].false_inter.list_couples)
-        train_false_folds_interaction_bool.append(train_folds[ifold].false_inter.interaction_bool)
-        train_false_folds_ind_inter.append(train_folds[ifold].false_inter.ind_inter)
+        train_true_folds_array.append(train_true_folds[ifold].array)
 
-    if not os.path.exists(cv_dirname + '/' + 'train_folds'):
-        os.mkdir(cv_dirname + '/' + 'train_folds')
-        print("Train folds directory for ", pattern_name, ", ", args.DB_version, "created.")
-    else:
-        print("Train folds directory for ", pattern_name, ", ", args.DB_version, "already exists.")
+    train_false_folds_array = []
+    for iclf in range(args.nb_clf):
+        train_false_folds_array.append(train_false_folds[iclf].array)
 
-    train_true_folds_list_couples_filename = cv_dirname + 'train_folds/' + \
-        pattern_name + '_train_true_folds_list_couples.data'
-    train_true_folds_interaction_bool_filename = cv_dirname + 'train_folds/' + \
-        pattern_name + '_train_true_folds_interaction_bool.data'
-    train_true_folds_ind_inter_filename = cv_dirname + 'train_folds/' + \
-        pattern_name + '_train_true_folds_ind_inter.data'
+    pickle.dump(train_true_folds_array, 
+                open(train_true_folds_array_filename, 'wb'))
 
-    train_false_folds_list_couples_filename = cv_dirname + 'train_folds/' + \
-        pattern_name + '_train_false_folds_list_couples.data'
-    train_false_folds_interaction_bool_filename = cv_dirname + 'train_folds/' + \
-        pattern_name + '_train_false_folds_interaction_bool.data'
-    train_false_folds_ind_inter_filename = cv_dirname + 'train_folds/' + \
-        pattern_name + '_train_false_folds_ind_inter.data'
-
-    pickle.dump(train_true_folds_list_couples, 
-                open(train_true_folds_list_couples_filename, 'wb'))
-    pickle.dump(train_true_folds_interaction_bool, 
-                open(train_true_folds_interaction_bool_filename, 'wb'))
-    pickle.dump(train_true_folds_ind_inter, 
-                open(train_true_folds_ind_inter_filename, 'wb'))
-
-    pickle.dump(train_false_folds_list_couples, 
-                open(train_false_folds_list_couples_filename, 'wb'))
-    pickle.dump(train_false_folds_interaction_bool, 
-                open(train_false_folds_interaction_bool_filename, 'wb'))
-    pickle.dump(train_false_folds_ind_inter, 
-                open(train_false_folds_ind_inter_filename, 'wb'))
+    pickle.dump(train_false_folds_array, 
+                open(train_false_folds_array_filename, 'wb'))

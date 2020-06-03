@@ -5,6 +5,7 @@ import numpy as np
 import os
 
 from sklearn.svm import SVC
+from datetime import datetime
 
 from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
 from DTI_prediction.process_dataset.DB_utils import check_drug, check_protein
@@ -60,6 +61,9 @@ if __name__ == "__main__":
     pred_dirname = root + data_dir + 'predictions/'
     clf_dirname = root + data_dir + 'classifiers/kronSVM/'
 
+    now = datetime.now()
+    date_time = now.strftime("%Y%m%d")
+
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
     
     dict_ind2mol = preprocessed_DB.drugs.dict_ind2mol
@@ -75,16 +79,16 @@ if __name__ == "__main__":
         clf_filename = clf_dirname + pattern_name + \
         '_kronSVM_list_clf_norm.data'
         output_filename = pred_dirname + pattern_name + '_kronSVM_norm_' + \
-            args.dbid + '_pred_output.data'
+            args.dbid + '_pred_output_' + date_time + '.data'
         clean_filename = pred_dirname + pattern_name + "_kronSVM_norm_" + \
-            args.dbid + '_pred_clean.csv'
+            args.dbid + '_pred_clean_' + date_time + '.csv'
     else:
         clf_filename = clf_dirname + pattern_name + \
         '_kronSVM_list_clf.data'
         output_filename = pred_dirname + pattern_name + '_kronSVM_' + args.dbid\
-        + '_pred_output.data'
+        + '_pred_output_' + date_time + '.data'
         clean_filename = pred_dirname + pattern_name + '_kronSVM_' +args.dbid\
-        + '_pred_clean.tsv'
+        + '_pred_clean_' + date_time + '.csv'
     list_clf = pickle.load(open(clf_filename, 'rb'))
     nb_clf = len(list_clf)
 
@@ -127,6 +131,8 @@ if __name__ == "__main__":
     print("Prediction for (classifier)", clf_id, "done.") 
 
     pickle.dump(pred, open(output_filename, 'wb'))
+
+    # Post-processing
 
     raw_df = pd.read_csv(root + raw_data_dir + \
                          'drugbank_small_molecule_target_polypeptide_ids.csv/all.csv',
