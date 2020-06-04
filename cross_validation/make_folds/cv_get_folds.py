@@ -6,7 +6,7 @@ from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import Interaction
 
 root = "./../CFTR_PROJECT/"
 
-def get_test_folds(DB_version, DB_type, process_name):
+def get_test_folds(DB_version, DB_type):
 
     """ 
     Load the test folds
@@ -18,23 +18,19 @@ def get_test_folds(DB_version, DB_type, process_name):
         format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
     DB_type : str
         string of the DrugBank type
-    process_name : str
-        string of the process name ex: 'NNdti'
 
     Returns
     -------
     test_folds : ListInteractions 
     """ 
 
-    # pattern_name variable
-    pattern_name =  DB_type + '_' + process_name
     # data_dir variable 
-    data_dir = 'data/' + DB_version + '/' + DB_type + '/' + pattern_name + '/'
+    data_dir = 'data/' + DB_version + '/' + DB_type + '/'
 
     cv_dirname = root + data_dir + '/cross_validation/'
 
     test_folds_array_filename = cv_dirname + 'test_folds/' \
-        + pattern_name + '_test_folds_array.data'
+        + DB_type + '_test_folds_array.data'
 
     test_folds_array = pickle.load(open(test_folds_array_filename, 'rb'))
     nb_folds = len(test_folds_array)
@@ -48,7 +44,7 @@ def get_test_folds(DB_version, DB_type, process_name):
 
     return test_folds
 
-def get_train_folds(DB_version, DB_type, process_name, nb_clf):
+def get_train_folds(DB_version, DB_type, nb_clf):
 
     """ 
     Load the train folds
@@ -60,25 +56,21 @@ def get_train_folds(DB_version, DB_type, process_name, nb_clf):
         format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
     DB_type : str
         string of the DrugBank type
-    process_name : str
-        string of the process name ex: 'NNdti'
 
     Returns
     -------
     train_folds : InteractionsTrainDataset
     """ 
 
-    # pattern_name variable
-    pattern_name =  DB_type + '_' + process_name
     # data_dir variable 
-    data_dir = 'data/' + DB_version + '/' + DB_type + '/' + pattern_name 
+    data_dir = 'data/' + DB_version + '/' + DB_type + '/'
 
     cv_dirname = root + data_dir + '/cross_validation/'
 
     # True interactions
 
     train_true_folds_array_filename = cv_dirname + 'train_folds/' \
-        + pattern_name + '_train_true_folds_array.data'
+        + DB_type + '_train_true_folds_array.data'
 
     train_true_folds_array = pickle.load(open(train_true_folds_array_filename, 'rb'))
 
@@ -93,7 +85,7 @@ def get_train_folds(DB_version, DB_type, process_name, nb_clf):
     # False interactions
 
     train_false_folds_array_filename = cv_dirname + 'train_folds/' \
-        + pattern_name + '_train_false_folds_array.data'
+        + DB_type + '_train_false_folds_array.data'
 
     train_false_folds_array = pickle.load(open(train_false_folds_array_filename, 'rb'))
 

@@ -151,28 +151,23 @@ if __name__ == "__main__":
     parser.add_argument("DB_type", type = str,
                         help = "the DrugBank type, example: 'S0h'")
 
-    parser.add_argument("process_name", type = str,
-                        help = "the name of the process, helper to find the data again, example = 'DTI'")
-
     parser.add_argument("nb_clf", type = int,
                         help = "number of classifiers for one prediction, example = 5")
 
     args = parser.parse_args()
 
-    # pattern_name variable
-    pattern_name =  args.DB_type + '_' + args.process_name
     # data_dir variable 
-    data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name + '/'
+    data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/'
 
     #create directories
     if not os.path.exists(root + data_dir + '/' + 'cross_validation'):
         os.mkdir(root + data_dir + '/' + 'cross_validation')
         os.mkdir(root + data_dir + '/' + 'cross_validation' + '/' + 'test_folds')
         os.mkdir(root + data_dir + '/' + 'cross_validation' + '/' + 'train_folds')
-        print("Cross validation directory for ", pattern_name, ", ", args.DB_version,
+        print("Cross validation directory for", args.DB_type, ",", args.DB_version,
         "created.")
     else:
-        print("Cross validation directory for ", pattern_name, ", ", args.DB_version,
+        print("Cross validation directory for", args.DB_type, ",", args.DB_version,
         "already exists.")
 
     cv_dirname = root + data_dir + '/cross_validation/'
@@ -196,7 +191,7 @@ if __name__ == "__main__":
     # Save test folds
 
     test_folds_array_filename = cv_dirname + 'test_folds/' \
-        + pattern_name + '_test_folds_array.data'
+        + args.DB_type + '_test_folds_array.data'
 
     test_folds = []
     test_folds_array = []
@@ -210,8 +205,8 @@ if __name__ == "__main__":
 
     # Save train folds
 
-    train_true_folds_array_filename = cv_dirname + 'train_folds/' + pattern_name + '_train_true_folds_array.data'
-    train_false_folds_array_filename = cv_dirname + 'train_folds/' + pattern_name + '_train_false_folds_array.data'
+    train_true_folds_array_filename = cv_dirname + 'train_folds/' + args.DB_type + '_train_true_folds_array.data'
+    train_false_folds_array_filename = cv_dirname + 'train_folds/' + args.DB_type + '_train_false_folds_array.data'
 
     train_true_folds_array = []
     for ifold in range(nb_folds):

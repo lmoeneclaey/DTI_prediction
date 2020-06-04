@@ -1,8 +1,6 @@
 import numpy as np
 
 from DTI_prediction.process_dataset.DB_utils import Couples
-# from process_dataset.process_DB import get_DB
-# from make_K_inter import get_K_mol_K_prot
 
 root = './../CFTR_PROJECT/'
 
