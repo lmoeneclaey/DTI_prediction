@@ -152,7 +152,7 @@ if __name__ == "__main__":
                         help = "the DrugBank type, example: 'S0h'")
 
     parser.add_argument("nb_clf", type = int,
-                        help = "number of classifiers for one prediction, example = 5")
+                        help = "number of classifiers for future predictions, example = 5")
 
     args = parser.parse_args()
 
@@ -170,7 +170,7 @@ if __name__ == "__main__":
         print("Cross validation directory for", args.DB_type, ",", args.DB_version,
         "already exists.")
 
-    cv_dirname = root + data_dir + '/cross_validation/'
+    cv_dirname = root + data_dir + 'cross_validation/'
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
