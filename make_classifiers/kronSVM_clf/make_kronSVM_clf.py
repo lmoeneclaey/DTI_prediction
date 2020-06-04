@@ -46,7 +46,7 @@ if __name__ == "__main__":
     # pattern_name variable
     pattern_name =  args.DB_type + '_' + args.process_name
     # data_dir variable 
-    data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name + '/'
+    data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name
 
     #create directories
     if not os.path.exists(root + 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name):

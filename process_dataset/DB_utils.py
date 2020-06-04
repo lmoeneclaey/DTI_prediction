@@ -100,12 +100,12 @@ class Couples:
 
 def get_couples_from_array(couples_array):
 
-    list_couples = couples_array[:,:2].to_list()
-    interaction_bool = couples_array[:,3]
+    list_couples = couples_array[:,:2].tolist()
+    interaction_bool = couples_array[:,2]
     interaction_bool_int = interaction_bool.astype(np.int)
 
     couples = Couples(list_couples = list_couples,
-                      interaction_bool = interaction_bool_int)
+                      interaction_bool = interaction_bool_int.reshape(-1,1))
 
     return couples
 
