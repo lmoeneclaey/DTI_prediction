@@ -17,6 +17,8 @@ root = './../CFTR_PROJECT/'
 
 if __name__ == "__main__":
 
+    print("debut du script")
+
     parser = argparse.ArgumentParser(
     "Process the kernel of interactions of a list of molecules and proteins \
         and create the corresponding kronSVM classifier for cross validation analysis.")
@@ -108,10 +110,10 @@ if __name__ == "__main__":
     # Classifier name
     if args.norm == True:
         cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_list_clf_norm.data'
+        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_norm.data'
     else:
         cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_list_clf.data'
+        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf.data'
 
     pickle.dump(cv_list_clf, 
                 open(cv_clf_filename, 'wb'),
@@ -119,7 +121,7 @@ if __name__ == "__main__":
 
     # Couples of the classifier
     cv_couples_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_list_couples_of_clf.data'
+        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_couples.data'
 
     pickle.dump(cv_list_couples_of_clf, 
                 open(cv_couples_filename, 'wb'), 

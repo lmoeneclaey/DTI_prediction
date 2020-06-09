@@ -82,7 +82,7 @@ if __name__ == "__main__":
 
     list_seed = [71, 343, 928, 2027, 2]
     list_clf = []
-    list_couples_of_clf, list_ind_false_inter = [], []
+    list_couples_of_clf = []
 
     corrected_DB = copy.deepcopy(preprocessed_DB)
     for dbid in args.orphan:

@@ -70,7 +70,7 @@ def get_train_folds(DB_version, DB_type, nb_clf):
     # True interactions
 
     train_true_folds_array_filename = cv_dirname + 'train_folds/' \
-        + DB_type + '_train_true_folds_array.data'
+        + DB_type + '_train_true_folds_' + str(nb_clf) + '_clf_array.data'
 
     train_true_folds_array = pickle.load(open(train_true_folds_array_filename, 'rb'))
 
@@ -85,7 +85,7 @@ def get_train_folds(DB_version, DB_type, nb_clf):
     # False interactions
 
     train_false_folds_array_filename = cv_dirname + 'train_folds/' \
-        + DB_type + '_train_false_folds_array.data'
+        + DB_type + '_train_false_folds_' + str(nb_clf) + '_clf_array.data'
 
     train_false_folds_array = pickle.load(open(train_false_folds_array_filename, 'rb'))
 

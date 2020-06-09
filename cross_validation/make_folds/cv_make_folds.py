@@ -178,13 +178,9 @@ if __name__ == "__main__":
     folds = make_folds(seed, args.nb_clf, preprocessed_DB)
 
     train_true_folds = folds[0]
-    print(len(train_true_folds))
     test_true_folds = folds[1]
-    print(len(test_true_folds))
     train_false_folds = folds[2]
-    print(len(train_false_folds))
     test_false_folds = folds[3]
-    print(len(test_false_folds))
 
     nb_folds = len(train_true_folds)
 
@@ -205,8 +201,10 @@ if __name__ == "__main__":
 
     # Save train folds
 
-    train_true_folds_array_filename = cv_dirname + 'train_folds/' + args.DB_type + '_train_true_folds_array.data'
-    train_false_folds_array_filename = cv_dirname + 'train_folds/' + args.DB_type + '_train_false_folds_array.data'
+    train_true_folds_array_filename = cv_dirname + 'train_folds/' + \
+        args.DB_type + '_train_true_folds_' + args.nb_clf + '_clf_array.data'
+    train_false_folds_array_filename = cv_dirname + 'train_folds/' + \
+        args.DB_type + '_train_false_folds_' + args.nb_clf + '_clf_array.data'
 
     train_true_folds_array = []
     for ifold in range(nb_folds):
