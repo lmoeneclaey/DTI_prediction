@@ -9,4 +9,4 @@
 #SBATCH --nodes=1
 ##SBATCH --cpus-per-task=1
 
-python process_dataset/make_K_prot.py temp drugbank_v5.1.5 S0h DTI -i $SLURM_ARRAY_TASK_ID
+python make_kernels/make_K_prot.py temp drugbank_v5.1.5 S0h -i $SLURM_ARRAY_TASK_ID

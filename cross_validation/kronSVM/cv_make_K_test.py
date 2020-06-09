@@ -6,8 +6,8 @@ def make_K_test(list_couples_train, list_couples_test, preprocessed_DB, kernels)
 
     # get the preprocessed DBdatabase 
     # preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_mol2ind = preprocessed_DB[2]
-    dict_prot2ind = preprocessed_DB[5]
+    dict_mol2ind = preprocessed_DB.drugs.dict_mol2ind
+    dict_prot2ind = preprocessed_DB.proteins.dict_prot2ind
 
     # couples in train
     nb_couples_train = len(list_couples_train)

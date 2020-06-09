@@ -7,17 +7,18 @@ import argparse
 
 from sklearn.preprocessing import KernelCenterer
 
+from process_dataset.DB_utils import Proteins, FormattedDB
 from process_DB import get_DB
 from make_K_mol import center_and_normalise_kernel
 from make_K_prot import make_temp_K_prot
 
 root = './../CFTR_PROJECT/'
 
-def make_range_temp_K_prot(DB_version, DB_type, process_name, i1, i2):
+def make_range_temp_K_prot(DB_version, DB_type, i1, i2):
     """ 
     Process make_temp_K_prot() for a range of proteins
 
-    The proteins got keys between *i1* and *i2* in the dict_target dictionary
+    The proteins got keys between *i1* and *i2* in the dict_protein dictionary
     See the description of make_temp_K_prot for more details 
 
     Parameters
@@ -27,8 +28,6 @@ def make_range_temp_K_prot(DB_version, DB_type, process_name, i1, i2):
         format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
     DB_type : str
         string of the DrugBank type exemple: "S0h"
-    process_name : str
-        string of the process name exemple: 'NNdti'
     i1 : int
         index of the first protein in the range in the dictionaries
     i2 : int
@@ -41,10 +40,10 @@ def make_range_temp_K_prot(DB_version, DB_type, process_name, i1, i2):
 
     for index in range(i1, i2):
         print(index)
-        make_temp_K_prot(DB_version, DB_type, process_name, index)
+        make_temp_K_prot(DB_version, DB_type, index)
 
 
-def check_temp_K_prot(DB_version, DB_type, process_name):
+def check_temp_K_prot(DB_version, DB_type):
     """ 
     Check and process make_temp_K_prot() for the proteins for which the \
     LAkernel has not been processed.
@@ -58,42 +57,37 @@ def check_temp_K_prot(DB_version, DB_type, process_name):
         format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
     DB_type : str
         string of the DrugBank type exemple: "S0h"
-    process_name : str
-        string of the process name exemple: 'NNdti'
 
     Returns
     -------
     None
     """
 
-    # pattern_name variable
-    pattern_name = process_name + '_' + DB_type
     # data_dir variable 
-    data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
+    data_dir = 'data/' + DB_version + '/' + DB_type + '/'
+
+    # kernels directory
+    kernels_dir = root + data_dir + 'kernels/'
 
     # get the DBdataBase preprocessed
-    preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[3]
-    dict_ind2prot = preprocessed_DB[4]
+    preprocessed_DB = get_DB(DB_version, DB_type)
+    dict_ind2prot = preprocessed_DB.proteins.dict_ind2prot
 
-    nb_prot = len(list(dict_target.keys()))
+    nb_prot = preprocessed_DB.proteins.nb
 
     list_ = []
     for index in range(nb_prot):
 
         # output_filename
         dbid = dict_ind2prot[index]
-        output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
+        output_filename = kernels_dir + 'LAkernel/LA_' + DB_type + \
             '_' + dbid + '.txt'
 
         if not os.path.isfile(output_filename):
             list_.append(dbid)
     print("list of uncompleted proteins", list_)
 
-#    for index in list_:
-#       make_temp_K_prot(DB_version, DB_type, process_name, index)
-
-def del_temp_K_prot(DB_version, DB_type, process_name, delete):
+def del_temp_K_prot(DB_version, DB_type, delete):
     """ 
     Check (and -optional- delete) LAkernel output files which are not completed.  
 
@@ -104,8 +98,6 @@ def del_temp_K_prot(DB_version, DB_type, process_name, delete):
         format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
     DB_type : str
         string of the DrugBank type exemple: "S0h"
-    process_name : str
-        string of the process name exemple: 'NNdti'
     delete : boolean
         whether or not to delete the file 
 
@@ -114,24 +106,24 @@ def del_temp_K_prot(DB_version, DB_type, process_name, delete):
     None
     """
 
-    # pattern_name variable
-    pattern_name = process_name + '_' + DB_type
     # data_dir variable 
-    data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
+    data_dir = 'data/' + DB_version + '/' + DB_type + '/'
+
+    # kernels directory
+    kernels_dir = root + data_dir + 'kernels/'
 
     # get the DBdataBase preprocessed
-    preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_target = preprocessed_DB[3]
-    dict_ind2prot = preprocessed_DB[4]
+    preprocessed_DB = get_DB(DB_version, DB_type)
+    dict_ind2prot = preprocessed_DB.proteins.dict_ind2prot
 
-    nb_prot = len(list(dict_target.keys()))
+    nb_prot = preprocessed_DB.proteins.nb
 
     list_ = []
     for index in range(nb_prot):
 
         # output_filename
         dbid = dict_ind2prot[index]
-        output_filename = root + data_dir + 'LAkernel/LA_' + pattern_name + \
+        output_filename = kernels_dir + 'LAkernel/LA_' + DB_type + \
             '_' + dbid + '.txt'
 
         if os.path.isfile(output_filename):
@@ -171,10 +163,6 @@ if __name__ == "__main__":
     parser.add_argument("DB_type", type = str,
                         help = "the DrugBank type, example: 'S0h'")
 
-    parser.add_argument("process_name", type = str,
-                        help = "the name of the process, helper to find the \
-                        data again, example = 'DTI'")
-
     # need to change for the uniprotID
     parser.add_argument("-i1", "--index1", type = int,
                         help = "the range of the protein in question, \
@@ -194,12 +182,11 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.action == "temp_range":
-        make_range_temp_K_prot(args.DB_version, args.DB_type, args.process_name,\
+        make_range_temp_K_prot(args.DB_version, args.DB_type,\
             args.index1, args.index2)
 
     elif args.action == "check":
-        check_temp_K_prot(args.DB_version, args.DB_type, args.process_name)
+        check_temp_K_prot(args.DB_version, args.DB_type)
     
     elif args.action == "del":
-        del_temp_K_prot(args.DB_version, args.DB_type, args.process_name, \
-            args.delete)
+        del_temp_K_prot(args.DB_version, args.DB_type, args.delete)

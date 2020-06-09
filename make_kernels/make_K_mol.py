@@ -1,8 +1,9 @@
+import argparse
+import math
 import numpy as np
+import os
 import pickle
 import sys
-import math
-import argparse
 
 from rdkit import DataStructs
 from rdkit import Chem
@@ -10,6 +11,7 @@ from rdkit.Chem import AllChem
 
 from sklearn.preprocessing import KernelCenterer
 
+from process_dataset.DB_utils import Drugs, FormattedDB
 from process_DB import get_DB
 
 # we have to change it in order to be robust
@@ -46,7 +48,7 @@ def center_and_normalise_kernel(K_temp):
 
     return K_norm
 
-def make_mol_kernel(DB_version, DB_type, process_name):
+def make_mol_kernel(DB_version, DB_type):
     """ 
     Compute the molecules kernels
 
@@ -83,25 +85,27 @@ def make_mol_kernel(DB_version, DB_type, process_name):
         radius : when 2 roughly equivalent to ECFP4
     """
 
-    # pattern_name variable
-    pattern_name = process_name + '_' + DB_type
     # data_dir variable 
-    data_dir = 'data/' + DB_version + '/' + pattern_name + '/'
+    data_dir = 'data/' + DB_version + '/' + DB_type + '/'
+
+    # kernels directory
+    kernels_dir = root + data_dir + 'kernels/'
+    os.mkdir(kernels_dir)
 
     # get the DBdataBase preprocessed
     # dict_ind2mol is necessary to fill the fingerprints' matrix 
-    preprocessed_DB = get_DB(DB_version, DB_type, process_name)
-    dict_ligand = preprocessed_DB[0]
-    dict_ind2mol = preprocessed_DB[1]
+    preprocessed_DB = get_DB(DB_version, DB_type)
+    dict_drug = preprocessed_DB.drugs.dict_drug
+    dict_ind2mol = preprocessed_DB.drugs.dict_ind2mol
 
     # get the ECFP fingerprints
-    nb_mol = len(list(dict_ligand.keys()))
+    nb_mol = preprocessed_DB.drugs.nb
     X_fingerprint = np.zeros((nb_mol, 1024), dtype=np.int32)
     list_fingerprint = []
     # for i in list(dict_ind2mol.keys()):
     for i in range(nb_mol):
         dbid = dict_ind2mol[i]
-        m = Chem.MolFromSmiles(dict_ligand[dbid])
+        m = Chem.MolFromSmiles(dict_drug[dbid])
         list_fingerprint.append(AllChem.GetMorganFingerprint(m, 2))
         arr = np.zeros((1,))
         DataStructs.ConvertToNumpyArray(
@@ -111,7 +115,7 @@ def make_mol_kernel(DB_version, DB_type, process_name):
                                         arr)
         X_fingerprint[i, :] = arr
     pickle.dump(X_fingerprint,
-                open(root + data_dir + pattern_name + '_X_ChemFingerprint.data',
+                open(kernels_dir + DB_type + '_X_ChemFingerprint.data',
                 'wb'))
     del X_fingerprint
 
@@ -126,11 +130,11 @@ def make_mol_kernel(DB_version, DB_type, process_name):
     # normalized or unnormalized
     for norm_type in ['norm', 'unnorm']:
         if norm_type == 'unnorm':
-            kernel_filename = root + data_dir + pattern_name + '_K_mol.data'
+            kernel_filename = kernels_dir + DB_type + '_K_mol.data'
             pickle.dump(X, open(kernel_filename, 'wb'), protocol=2)
         elif norm_type == 'norm':
             K_norm = center_and_normalise_kernel(X)
-            kernel_norm_filename = root + data_dir + pattern_name + '_K_mol_norm.data'
+            kernel_norm_filename = kernels_dir + DB_type + '_K_mol_norm.data'
             pickle.dump(K_norm, open(kernel_norm_filename, 'wb'), protocol=2)
 
     print(X[100, 100], K_norm[100, 100])
@@ -156,10 +160,6 @@ the Tanimoto Similarity between all of them.")
     parser.add_argument("DB_type", type = str,
                         help = "the DrugBank type, example: 'S0h'")
 
-    parser.add_argument("process_name", type = str,
-                        help = "the name of the process, helper to find the \
-                        data again, example = 'DTI'")
-
     # parser.add_argument("-v", "--verbosity", action = "store_true", 
                         # help = "increase output verbosity")
 
@@ -173,5 +173,4 @@ the Tanimoto Similarity between all of them.")
                 #    args.process_name)
     
     make_mol_kernel(args.DB_version, 
-                    args.DB_type,
-                    args.process_name)
+                    args.DB_type)
