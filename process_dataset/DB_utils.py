@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 class Drugs:
     """
@@ -97,6 +98,31 @@ class Couples:
             return self
         else:
             return self.__add__(other)
+
+def check_couple(protein_dbid,drug_dbid,couples):
+    """
+    Function which returns a boolean if the couple is in the list of Couples of\
+    a FormattedDB
+
+    Parameters
+    ----------
+    couple : tuple of length 2 
+        first term should be a DrugBankID of a drug
+        second term should be a DrugBankID of a protein
+    couples : Couples
+
+    Returns
+    -------
+    bool
+    """
+
+    couples_pd = pd.DataFrame(couples.array)
+    couples_pd.columns = ['UniprotID', 'DrugBankID', 'interaction_bool']
+
+    couple_bool = (couples_pd[(couples_pd['UniprotID']==protein_dbid) & \
+        (couples_pd['DrugBankID']==drug_dbid)].shape[0]==1)
+
+    return couple_bool
 
 def get_couples_from_array(couples_array):
 

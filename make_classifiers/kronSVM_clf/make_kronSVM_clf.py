@@ -2,13 +2,14 @@ import argparse
 import copy
 import numpy as np
 import os
+import pandas as pd
 import pickle
 
 from sklearn.svm import SVC
 
 from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
 from DTI_prediction.process_dataset.process_DB import get_DB
-from DTI_prediction.process_dataset.correct_interactions import get_orphan
+from DTI_prediction.process_dataset.correct_interactions import get_orphan, correct_interactions
 from DTI_prediction.make_kernels.get_kernels import get_K_mol_K_prot
 
 from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset, get_train_dataset, make_K_train
@@ -34,12 +35,16 @@ if __name__ == "__main__":
                         data again, example = 'DTI'")
 
     parser.add_argument("--norm", default = False, action="store_true", 
-                        help = "where or not to normalize the kernels, False \
+                        help = "whether or not to normalize the kernels, False \
                         by default")
 
     parser.add_argument("--orphan", type = str, action='append',
                         help = "molecules which you want to orphanize in the \
                             train data set")
+
+    parser.add_argument("--correct_interactions", default = False, action="store_true",
+                        help = "whether or not to add or correct some \
+                            interactions, False by default")
 
     args = parser.parse_args()
 
@@ -50,7 +55,7 @@ if __name__ == "__main__":
 
     #create directories
     if not os.path.exists(root + 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name):
-        os.mkdir(root + 'data/' + args.DB_version + '/' + '/' + args.DB_type + '/' +  pattern_name)
+        os.mkdir(root + 'data/' + args.DB_version + '/' + args.DB_type + '/' +  pattern_name)
         print("Directory", pattern_name, "for",  args.DB_version, "created")
     else: 
         print("Directory", pattern_name, "for",  args.DB_version, " already exists")
@@ -71,7 +76,7 @@ if __name__ == "__main__":
         print("kronSVM classifiers directory for ", pattern_name, ",", args.DB_version,
         "already exists.")
 
-    clf_dirname = root + data_dir + 'classifiers/kronSVM/'
+    clf_dirname = root + data_dir + '/classifiers/kronSVM/'
 
     C = 10.
 
@@ -80,13 +85,32 @@ if __name__ == "__main__":
 
     kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.norm)
 
-    list_seed = [71, 343, 928, 2027, 2]
+    list_seed = [2821, 1148, 1588, 188, 933]
     list_clf = []
     list_couples_of_clf = []
 
     corrected_DB = copy.deepcopy(preprocessed_DB)
+    
     for dbid in args.orphan:
         corrected_DB = get_orphan(DB=corrected_DB, dbid=dbid)
+
+    if args.correct_interactions == True:
+
+        corrected_interactions_filename = root + data_dir + \
+        "/corrected_interactions/" + pattern_name + "_corrected_interactions.csv"
+        corrected_interactions = pd.read_csv(corrected_interactions_filename,
+                                             sep=",", 
+                                             encoding="utf-8")
+
+        for iinter in range(corrected_interactions.shape[0]):
+            protein_dbid = corrected_interactions["UniprotID"][iinter]
+            drug_dbid = corrected_interactions["DrugbankID"][iinter]
+            corrected_interaction_bool = corrected_interactions[ "corrected_interaction_bool"][iinter]
+            
+            corrected_DB = correct_interactions(protein_dbid,
+                                                drug_dbid,
+                                                corrected_interaction_bool,
+                                                corrected_DB)
 
     for seed in list_seed:
         print("seed:", seed)
