@@ -82,15 +82,13 @@ if __name__ == "__main__":
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
-
     kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.norm)
 
-    list_seed = [2821, 1148, 1588, 188, 933]
-    list_clf = []
-    list_couples_of_clf = []
+    print("Initially, there are", preprocessed_DB.interactions.nb, "interactions \
+        in the preprocessed database.")
 
     corrected_DB = copy.deepcopy(preprocessed_DB)
-    
+
     for dbid in args.orphan:
         corrected_DB = get_orphan(DB=corrected_DB, dbid=dbid)
 
@@ -101,8 +99,10 @@ if __name__ == "__main__":
         corrected_interactions = pd.read_csv(corrected_interactions_filename,
                                              sep=",", 
                                              encoding="utf-8")
+        nb_interactions_to_correct = corrected_interactions.shape[0]
+        print(nb_interactions_to_correct, " interactions to add or correct.")
 
-        for iinter in range(corrected_interactions.shape[0]):
+        for iinter in range(nb_interactions_to_correct):
             protein_dbid = corrected_interactions["UniprotID"][iinter]
             drug_dbid = corrected_interactions["DrugbankID"][iinter]
             corrected_interaction_bool = corrected_interactions[ "corrected_interaction_bool"][iinter]
@@ -111,6 +111,15 @@ if __name__ == "__main__":
                                                 drug_dbid,
                                                 corrected_interaction_bool,
                                                 corrected_DB)
+
+    print("For this classifier, there will be", corrected_DB.interactions.nb, 
+          "interactions.")
+
+    # list_seed = [2821, 1148, 1588, 188, 933]
+    list_seed = [1177, 2126, 1841,  361, 2462]
+    list_clf = []
+    # list_couples_of_clf = []
+    list_train_datasets = []
 
     for seed in list_seed:
         print("seed:", seed)
@@ -137,8 +146,12 @@ if __name__ == "__main__":
         # similarity kernel for the interactions that we want to predict 
         # true_inter = train_set[2]
         # false_inter = train_set[3]
-        list_couples = true_inter.list_couples + false_inter.list_couples
-        list_couples_of_clf.append(list_couples)
+        # list_couples = true_inter.list_couples + false_inter.list_couples
+        # list_couples_of_clf.append(list_couples)
+        train_dataset = np.concatenate((true_inter.array, 
+                                       false_inter.array), 
+                                       axis=0)
+        list_train_datasets.append(train_dataset)
     
     print("Classifiers done.")
         
@@ -155,11 +168,19 @@ if __name__ == "__main__":
                 protocol=2)
 
     # Couples of the classifier
-    couples_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_couples_of_clf.data'
+    # couples_filename = clf_dirname + pattern_name + \
+    # '_kronSVM_list_couples_of_clf.data'
 
-    pickle.dump(list_couples_of_clf, 
-                open(couples_filename, 'wb'), 
+    # pickle.dump(list_couples_of_clf, 
+    #             open(couples_filename, 'wb'), 
+    #             protocol=2)
+
+    # Train datasets of the classifier
+    train_datasets_filename = clf_dirname + pattern_name + \
+        '_kronSVM_list_train_datasets.data'
+
+    pickle.dump(list_train_datasets, 
+                open(train_datasets_filename, 'wb'), 
                 protocol=2)
     
     print("Classifiers saved.")

@@ -10,6 +10,7 @@ from rdkit import Chem
 # but we should find a solution LATER for this pb
 # but so far it works, do not care about the error 
 from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
+from DTI_prediction.process_dataset.DB_utils import check_drug, check_protein
 from DTI_prediction.process_dataset.get_molecules_smiles import get_all_DrugBank_smiles
 from DTI_prediction.process_dataset.get_proteins_fastas import get_all_DrugBank_fasta
 
@@ -74,6 +75,8 @@ def process_DB(DB_version, DB_type):
                                                             DB_type)
 
     # get the python files of molecule
+    # So the way it has been created, each protein or drug that is in the list
+    # of interactions is in the list of proteins or drugs. 
     dict_id2smile_inter, dict_uniprot2fasta_inter, list_interactions = {}, {}, []
     print('len(list_inter)', len(list_inter))
     for couple in list_inter:
@@ -170,8 +173,6 @@ def get_DB(DB_version, DB_type):
         format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
     DB_type : str
         string of the DrugBank type
-    process_name : str
-        string of the process name ex: 'NNdti'
 
     Returns
     -------
@@ -257,10 +258,6 @@ if __name__ == "__main__":
     parser.add_argument("DB_type", type = str,
                         help = "the DrugBank type, example: 'S0h'")
 
-    parser.add_argument("process_name", type = str,
-                        help = "the name of the process, helper to find the \
-                        data again, example = 'DTI'")
-
     # parser.add_argument("-v", "--verbosity", action = "store_true", 
                         # help = "increase output verbosity")
 
@@ -270,8 +267,7 @@ if __name__ == "__main__":
         # print("find something")
     # else:
         # process_DB(args.DB_version,
-                #    args.DB_type,
-                #    args.process_name)
+                #    args.DB_type)
     
     process_DB(args.DB_version,
                args.DB_type)

@@ -8,7 +8,7 @@ from sklearn.svm import SVC
 from datetime import datetime
 
 from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
-from DTI_prediction.process_dataset.DB_utils import check_drug, check_protein
+from DTI_prediction.process_dataset.DB_utils import check_drug, check_protein, get_couples_from_array
 from DTI_prediction.process_dataset.process_DB import get_DB
 from DTI_prediction.make_kernels.get_kernels import get_K_mol_K_prot
 from DTI_prediction.predict.kronSVM.make_K_predict import make_K_predict_drug, make_K_predict_prot
@@ -37,8 +37,11 @@ if __name__ == "__main__":
                         help = "the DrugBankId of the molecule/protein of which\
                         we want to predict the interactions")
 
+    parser.add_argument("--protein", default = False, action="strore_true",
+                        help = "if you want to predict the drug targets of a protein")
+
     parser.add_argument("--norm", default = False, action="store_true", 
-                        help = "where or not to normalize the kernels")
+                        help = "whether or not to normalize the kernels")
 
     args = parser.parse_args()
 
@@ -66,10 +69,7 @@ if __name__ == "__main__":
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
     
-    dict_ind2mol = preprocessed_DB.drugs.dict_ind2mol
     nb_mol = preprocessed_DB.drugs.nb 
-    
-    dict_ind2prot = preprocessed_DB.proteins.dict_ind2prot
     nb_prot = preprocessed_DB.proteins.nb
 
     kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.norm)
@@ -92,25 +92,41 @@ if __name__ == "__main__":
     list_clf = pickle.load(open(clf_filename, 'rb'))
     nb_clf = len(list_clf)
 
-    couples_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_couples_of_clf.data'
-    list_couples_of_clf = pickle.load(open(couples_filename, 'rb'))
+    # couples_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_couples_of_clf.data'
+    # list_couples_of_clf = pickle.load(open(couples_filename, 'rb'))
+    train_datasets_filename = clf_dirname + pattern_name + \
+        '_kronSVM_list_train_datasets.data'
+    list_train_datasets = pickle.load(open(train_datasets_filename, 'rb'))
+
+    list_couples_of_clf = []
+    for iclf in range(nb_clf):
+        train_dataset = list_train_datasets[iclf]
+        train_couples = get_couples_from_array(train_dataset)
+        list_couples_of_clf.append(train_couples.list_couples)
+
+
 
     # You want to predict the targets of a drug
-    if args.dbid[:2] == 'DB':
+    if args.protein == False:
         
-        if check_drug(args.dbid, preprocessed_DB.drugs)==False:
+        if check_drug(args.dbid, preprocessed_DB.drugs)==True:
+
+            pred = np.zeros((nb_prot, nb_clf))
+
+            for clf_id in range(nb_clf):
+                K_predict = make_K_predict_drug(args.dbid,
+                                                preprocessed_DB,
+                                                kernels,
+                                                list_couples_of_clf[clf_id])
+
+                pred[:, clf_id] = list_clf[clf_id].predict_proba(K_predict)[:,1]
+
+        else:
             print("The drug you want to predict the targets is not in the database.")
 
-        pred = np.zeros((nb_prot, nb_clf))
+            # new DB
 
-        for clf_id in range(nb_clf):
-            K_predict = make_K_predict_drug(args.dbid,
-                                            preprocessed_DB,
-                                            kernels,
-                                            list_couples_of_clf[clf_id])
-
-            pred[:, clf_id] = list_clf[clf_id].predict_proba(K_predict)[:,1]
 
     # You want to predict the liganfs of a protein
     else:

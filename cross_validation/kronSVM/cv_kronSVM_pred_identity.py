@@ -60,19 +60,19 @@ if __name__ == "__main__":
     # get the classifiers
     if args.norm == True:
         cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_norm.data'
+        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_norm_identity.data'
         output_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_C_' + str(str(args.C)) + '_' + str(args.nb_clf) + '_pred_norm.data'
+        '_kronSVM_cv_C_' + str(str(args.C)) + '_' + str(args.nb_clf) + '_pred_norm_identity.data'
     else:
         cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_C_' + str(str(args.C)) + '_' + str(args.nb_clf) + '_clf.data'
+        '_kronSVM_cv_C_' + str(str(args.C)) + '_' + str(args.nb_clf) + '_clf_identity.data'
         output_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_pred.data'
+        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_pred_identity.data'
 
     cv_list_clf = pickle.load(open(cv_clf_filename, 'rb'))
 
     cv_couples_filename = kronsvm_cv_dirname + args.DB_type + \
-    '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_couples.data'
+    '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_couples_identity.data'
     cv_list_couples_of_clf = pickle.load(open(cv_couples_filename, 'rb'))
 
     cv_pred = []

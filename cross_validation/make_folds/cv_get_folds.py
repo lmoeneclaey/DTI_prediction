@@ -64,8 +64,7 @@ def get_train_folds(DB_version, DB_type, nb_clf):
 
     # data_dir variable 
     data_dir = 'data/' + DB_version + '/' + DB_type + '/'
-
-    cv_dirname = root + data_dir + '/cross_validation/'
+    cv_dirname = root + data_dir + 'cross_validation/'
 
     # True interactions
 

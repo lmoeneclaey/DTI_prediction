@@ -7,10 +7,10 @@ import argparse
 
 from sklearn.preprocessing import KernelCenterer
 
-from process_dataset.DB_utils import Proteins, FormattedDB
-from process_DB import get_DB
-from make_K_mol import center_and_normalise_kernel
-from make_K_prot import make_temp_K_prot
+from DTI_prediction.process_dataset.DB_utils import Proteins, FormattedDB
+from DTI_prediction.process_dataset.process_DB import get_DB
+from DTI_prediction.make_kernels.make_K_mol import center_and_normalise_kernel
+from DTI_prediction.make_kernels.make_K_prot import make_temp_K_prot
 
 root = './../CFTR_PROJECT/'
 

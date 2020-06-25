@@ -202,9 +202,9 @@ if __name__ == "__main__":
     # Save train folds
 
     train_true_folds_array_filename = cv_dirname + 'train_folds/' + \
-        args.DB_type + '_train_true_folds_' + args.nb_clf + '_clf_array.data'
+        args.DB_type + '_train_true_folds_' + str(args.nb_clf) + '_clf_array.data'
     train_false_folds_array_filename = cv_dirname + 'train_folds/' + \
-        args.DB_type + '_train_false_folds_' + args.nb_clf + '_clf_array.data'
+        args.DB_type + '_train_false_folds_' + str(args.nb_clf) + '_clf_array.data'
 
     train_true_folds_array = []
     for ifold in range(nb_folds):

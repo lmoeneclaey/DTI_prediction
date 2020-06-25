@@ -11,8 +11,8 @@ from rdkit.Chem import AllChem
 
 from sklearn.preprocessing import KernelCenterer
 
-from process_dataset.DB_utils import Drugs, FormattedDB
-from process_DB import get_DB
+from DTI_prediction.process_dataset.DB_utils import Drugs, FormattedDB
+from DTI_prediction.process_dataset.process_DB import get_DB
 
 # we have to change it in order to be robust
 root = './../CFTR_PROJECT/'
