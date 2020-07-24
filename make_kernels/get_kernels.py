@@ -3,7 +3,7 @@ import pickle
 
 root = "./../CFTR_PROJECT/"
 
-def get_K_mol_K_prot(DB_version, DB_type, norm):
+def get_K_mol_K_prot(DB_version, DB_type, center_norm, norm):
     """ 
     Load the molecules and the proteins kernels
 
@@ -16,7 +16,8 @@ def get_K_mol_K_prot(DB_version, DB_type, norm):
         string of the DrugBank type
     norm : boolean
         normalized or unnormalized
-        "normalized" by default
+    center_norm : boolean 
+        centered and normalized
 
     Returns
     -------
@@ -29,11 +30,15 @@ def get_K_mol_K_prot(DB_version, DB_type, norm):
     # kernels directory
     kernels_dir = root + data_dir + 'kernels/'
 
-    if norm == False:
-        K_mol = pickle.load(open(kernels_dir + DB_type + '_K_mol.data', 'rb'))
-        K_prot = pickle.load(open(kernels_dir + DB_type + '_K_prot.data', 'rb'))
+    if center_norm == True:
+        K_mol = pickle.load(open(kernels_dir + DB_type + '_K_mol_centered_norm.data', 'rb'))
+        K_prot = pickle.load(open(kernels_dir + DB_type + '_K_prot_centered_norm.data', 'rb'))
     elif norm == True:
         K_mol = pickle.load(open(kernels_dir + DB_type + '_K_mol_norm.data', 'rb'))
         K_prot = pickle.load(open(kernels_dir + DB_type + '_K_prot_norm.data', 'rb'))
+    else:
+        K_mol = pickle.load(open(kernels_dir + DB_type + '_K_mol.data', 'rb'))
+        K_prot = pickle.load(open(kernels_dir + DB_type + '_K_prot.data', 'rb'))
+
 
     return K_mol, K_prot

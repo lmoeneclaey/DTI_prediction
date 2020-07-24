@@ -9,7 +9,8 @@ from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, Fo
 from DTI_prediction.process_dataset.process_DB import get_DB
 from DTI_prediction.make_kernels.get_kernels import get_K_mol_K_prot
 
-from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset, make_K_train
+# from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset, make_K_train
+from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import make_K_train
 
 from DTI_prediction.cross_validation.make_folds.cv_get_folds import get_train_folds
 
@@ -41,6 +42,10 @@ if __name__ == "__main__":
                         help = "where or not to normalize the kernels, False \
                         by default")
 
+    parser.add_argument("--center_norm", default = False, action="store_true", 
+                        help = "whether or not to center AND normalize the \
+                            kernels, False by default")
+
     args = parser.parse_args()
 
     # data_dir variable 
@@ -59,33 +64,34 @@ if __name__ == "__main__":
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
-    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.norm)
+    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.center_norm, args.norm)
 
     # Get the train datasets
-    train_folds = get_train_folds(args.DB_version, args.DB_type, args.nb_clf)
+    train_folds = get_train_folds(args.DB_version, args.DB_type)
 
     nb_folds = len(train_folds)
     nb_clf = len(train_folds[0])
 
     cv_list_clf = []
-    cv_list_couples_of_clf = []
+    # cv_list_couples_of_clf = []
 
     for ifold in range(nb_folds):
         print("fold:", ifold)
 
         cv_list_clf_per_fold = []
-        cv_list_couples_of_clf_per_fold = []
+        # cv_list_couples_of_clf_per_fold = []
 
         for iclf in range(nb_clf):
 
             train_dataset = train_folds[ifold][iclf]
-            true_inter = train_dataset.true_inter
-            false_inter = train_dataset.false_inter
+            # true_inter = train_dataset.true_inter
+            # false_inter = train_dataset.false_inter
 
             K_train = make_K_train(train_dataset, preprocessed_DB, kernels)
-            y_train = np.concatenate((true_inter.interaction_bool, 
-                                      false_inter.interaction_bool),
-                                      axis=0)
+            # y_train = np.concatenate((true_inter.interaction_bool, 
+            #                           false_inter.interaction_bool),
+            #                           axis=0)
+            y_train = train_dataset.interaction_bool
 
             # Create the classifier
             clf = SVC(C=args.C, 
@@ -96,11 +102,11 @@ if __name__ == "__main__":
             cv_list_clf_per_fold.append(clf)
 
             # list of couples
-            list_couples = true_inter.list_couples + false_inter.list_couples
-            cv_list_couples_of_clf_per_fold.append(list_couples)
+            # list_couples = true_inter.list_couples + false_inter.list_couples
+            # cv_list_couples_of_clf_per_fold.append(list_couples)
 
         cv_list_clf.append(cv_list_clf_per_fold)
-        cv_list_couples_of_clf.append(cv_list_couples_of_clf_per_fold)
+        # cv_list_couples_of_clf.append(cv_list_couples_of_clf_per_fold)
     
     print("Classifiers for the cross validation done.")
 
@@ -108,7 +114,10 @@ if __name__ == "__main__":
         # list_ind_false_inter.append(false_inter.ind_inter)
         
     # Classifier name
-    if args.norm == True:
+    if args.center_norm == True:
+        cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
+        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_centered_norm.data'
+    elif args.norm == True:
         cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
         '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_norm.data'
     else:
@@ -119,12 +128,12 @@ if __name__ == "__main__":
                 open(cv_clf_filename, 'wb'),
                 protocol=2)
 
-    # Couples of the classifier
-    cv_couples_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_couples.data'
+    # # Couples of the classifier
+    # cv_couples_filename = kronsvm_cv_dirname + args.DB_type + \
+    #     '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_couples.data'
 
-    pickle.dump(cv_list_couples_of_clf, 
-                open(cv_couples_filename, 'wb'), 
-                protocol=2)
+    # pickle.dump(cv_list_couples_of_clf, 
+    #             open(cv_couples_filename, 'wb'), 
+    #             protocol=2)
     
     print("Classifiers for the cross validation saved.")

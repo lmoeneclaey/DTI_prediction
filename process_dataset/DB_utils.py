@@ -1,5 +1,8 @@
+import copy
 import numpy as np
 import pandas as pd
+
+from rdkit import Chem
 
 class Drugs:
     """
@@ -32,6 +35,34 @@ def check_drug(dbid, drugs):
     list_dbid = list(drugs.dict_drug.keys())
 
     return dbid in list_dbid
+
+def add_drug(drugs, drug_id, smile):
+    """
+    Add a drug with its id to a list of drugs
+    """
+
+    new_drugs_temp = copy.deepcopy(drugs)
+    
+    # check that the drug is not already in the list of drugs
+    if check_drug(drug_id, drugs)==True:
+        print("The drug is already in the list.")
+
+    else:
+
+        m = Chem.MolFromSmiles(smile)
+        if m is not None and smile!='':
+            new_drugs_temp.dict_drug[drug_id]=smile
+            # to change when the Class Drugs will be updated
+            new_drugs_temp.dict_ind2mol[drugs.nb]=drug_id
+            new_drugs_temp.dict_mol2ind[drug_id]=drugs.nb
+
+    new_drugs = Drugs(dict_drug = new_drugs_temp.dict_drug,
+                      dict_ind2mol = new_drugs_temp.dict_ind2mol,
+                      dict_mol2ind = new_drugs_temp.dict_mol2ind)
+
+    return new_drugs
+
+
 
 class Proteins:
     """

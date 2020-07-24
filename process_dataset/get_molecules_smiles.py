@@ -1,6 +1,10 @@
+import os
+
 from rdkit import Chem
 
 root = "./../CFTR_PROJECT/"
+# To change in the future
+new_drug_dir = 'data/mol-CF/'
 
 LIST_AA = ['Q', 'Y', 'R', 'W', 'T', 'F', 'K', 'V', 'S', 'C', 'H', 'L', 'E', \
     'P', 'D', 'N', 'I', 'A', 'M', 'G']
@@ -125,3 +129,42 @@ def get_all_DrugBank_smiles(DB_version, DB_type):
         dict_id2smile_sorted[dbid] = dict_id2smile[dbid]
 
     return dict_id2smile_sorted
+
+# Change the name of this function
+def get_non_DrugBank_smile(drug_name):
+    """
+    Get the smile of a drug that is not in the DrugBank database
+
+    Parameters
+    ----------
+    drug_name: str
+
+    Returns
+    -------
+    smile 
+    """
+
+    smile = None 
+    found_smile = None
+
+    if os.path.exists(root + new_drug_dir + drug_name + '.sdf'):
+        f = open(root + new_drug_dir + drug_name + '.sdf', 'r')
+    else:
+        print("The sdf file for", drug_name, "has not been found.")
+
+    for line in f:
+        line = line.rstrip()
+
+        if found_smile:
+            smile = line
+            found_smile = False
+
+        if line == "> <PUBCHEM_OPENEYE_CAN_SMILES>":
+        # if line == "> <SMILES>":
+            found_smile = True
+    f.close()
+
+    return smile
+
+
+    
