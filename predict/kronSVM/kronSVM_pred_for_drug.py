@@ -21,7 +21,7 @@ root = './../CFTR_PROJECT/'
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    "Predict the interactions "
+    "Predict the interactions with a kronSVM classifier."
 
     parser.add_argument("DB_version", type = str, choices = ["drugbank_v5.1.1",
                         "drugbank_v5.1.5"], help = "the number of the DrugBank \
@@ -109,7 +109,7 @@ if __name__ == "__main__":
         '_train_datasets_array.data'
     train_datasets_array = pickle.load(open(train_datasets_array_filename, 'rb'))
 
-    nb_clf = len(train_datasets_array[0])
+    nb_clf = len(train_datasets_array)
 
     list_train_datasets = []
     for iclf in range(nb_clf):

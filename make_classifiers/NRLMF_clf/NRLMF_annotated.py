@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     # taille IntMat
     model.pred = np.full(intMat.shape, np.inf)
-    R = W * intMat
+    # R = W * intMat
     # W is a binary matrix to indicate what are the train data (pairs that can be used to train)
     # intMat is the binary interaction matrix
     # fit

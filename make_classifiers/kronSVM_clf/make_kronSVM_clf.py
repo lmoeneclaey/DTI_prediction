@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     train_datasets_array = pickle.load(open(train_datasets_array_filename, 'rb'))
 
-    nb_clf = len(train_datasets_array[0])
+    nb_clf = len(train_datasets_array)
 
     list_train_datasets = []
     for iclf in range(nb_clf):

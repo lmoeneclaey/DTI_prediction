@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=random_center_norm_pred
-#SBATCH --output=/mnt/data4/mnajm/CFTR_PROJECT/log/random_center_norm_pred_20200717.log
-#SBATCH --error=/mnt/data4/mnajm/CFTR_PROJECT/log/random_center_norm_pred_20200717.err
+#SBATCH --output=/mnt/data4/mnajm/CFTR_PROJECT/log/random_center_norm_pred_20200726.log
+#SBATCH --error=/mnt/data4/mnajm/CFTR_PROJECT/log/random_center_norm_pred_20200726.err
 #SBATCH --mem 20000
 
 # chloroquine
