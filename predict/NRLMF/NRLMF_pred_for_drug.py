@@ -1,4 +1,5 @@
-import argparse 
+import argparse
+import copy 
 import pandas as pd
 import pickle
 import numpy as np
@@ -8,10 +9,14 @@ from datetime import datetime
 
 from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
 from DTI_prediction.process_dataset.DB_utils import check_drug, get_couples_from_array, add_drug
+from DTI_prediction.process_dataset.get_molecules_smiles import get_non_DrugBank_smile
 from DTI_prediction.process_dataset.process_DB import get_DB
 from DTI_prediction.make_kernels.get_kernels import get_K_mol_K_prot
+from DTI_prediction.make_kernels.make_K_mol import make_mol_kernel, normalise_kernel, center_and_normalise_kernel
 
 from DTI_prediction.make_classifiers.NRLMF_clf.NRLMF_utils import NRLMF
+
+from DTI_prediction.predict.predictions_postprocess import predictions_postprocess_drug
 
 root = '../CFTR_PROJECT/'
 
@@ -60,18 +65,6 @@ if __name__ == "__main__":
     pred_dirname = root + data_dir + 'predictions/'
     train_datasets_dirname = root + data_dir + '/classifiers/train_datasets/'
 
-    now = datetime.now()
-    date_time = now.strftime("%Y%m%d")
-
-    if args.center_norm == True:
-        clean_filename = pred_dirname + pattern_name + "_kronSVM_centered_norm_" + \
-            args.dbid + '_pred_clean_' + date_time + '.csv'
-    elif args.norm == True:
-        clean_filename = pred_dirname + pattern_name + "_kronSVM_norm_" + \
-            args.dbid + '_pred_clean_' + date_time + '.csv'
-    else:
-        clean_filename = pred_dirname + pattern_name + '_kronSVM_' +args.dbid\
-        + '_pred_clean_' + date_time + '.csv'
 
     # Get the drugs and the proteins of the DrugBank database
     DB = get_DB(args.DB_version, args.DB_type)
@@ -80,6 +73,31 @@ if __name__ == "__main__":
     kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.center_norm, args.norm)
     DB_drugs_kernel = kernels[0]
     DB_proteins_kernel = kernels[1]
+
+    # Modify the drugs kernel if the drug is not in the DrugBank database
+    if check_drug(args.dbid, DB.drugs)==True:
+
+        DB_drugs_kernel_final = copy.deepcopy(DB_drugs_kernel)
+    
+    else:
+        print(args.dbid, "is not in the database.")
+
+        # read the corresponding sdf file
+        drug_smile = get_non_DrugBank_smile(args.dbid)
+        print("The sdf file for", args.dbid, "is downloaded.")
+
+        # add the drug to the list of drugs
+        DB_drugs_updated = add_drug(drugs = DB.drugs,
+                                    drug_id = args.dbid,
+                                    smile = drug_smile)
+
+        # make_new_K_mol, the normalise part should be included after confirmation
+        DB_drugs_kernel_updated = make_mol_kernel(DB_drugs_updated)[1]
+
+        if args.center_norm == True:
+            DB_drugs_kernel_final = center_and_normalise_kernel(DB_drugs_kernel_updated)
+        elif args.norm == True:
+            DB_drugs_kernel_final = normalise_kernel(DB_drugs_kernel_updated)
 
     # Get the train datasets
     train_datasets_array_filename = train_datasets_dirname + pattern_name + \
@@ -93,14 +111,6 @@ if __name__ == "__main__":
         train_dataset = get_couples_from_array(train_datasets_array[iclf])
         list_train_datasets.append(train_dataset)
 
-    # W is a binary matrix to indicate what are the train data (pairs that can be used to train)
-    W = np.zeros(intMat.shape)
-    for prot_id, mol_id in train_dataset.list_couples:
-        W[DB.drugs.dict_mol2ind[mol_id], DB.proteins.dict_prot2ind[prot_id]] = 1
-
-    # R is a filter of W on intMat
-    intMat = (DB.intMat).T
-    R = W * intMat
 
     # Prepare the NRLMF classifier
     seed=92
@@ -117,40 +127,46 @@ if __name__ == "__main__":
                   beta=best_param['beta'], 
                   theta=best_param['theta'],
                   max_iter=best_param['max_iter'])
-    model.fix_model(W=W,
-                    intMat=intMat, 
-                    drugMat=DB_drugs_kernel, 
-                    targetMat=DB_proteins_kernel, 
-                    seed=seed)
 
-    # Process the predictions 
+    # Predictions
+    intMat = (DB.intMat).T
     pred = np.zeros((DB.proteins.nb, nb_clf))
-
-    # If the drug is in the DrugBank database
-    if check_drug(args.dbid, DB.drugs)==True:
-
-        for iclf in range(nb_clf):
-
-            train_dataset = list_train_datasets[iclf]
-
-             # Prepare the test dataset
-            list_couples_predict = []
-            for ind in range(DB.proteins.nb):
-                list_couples_predict.append((DB.drugs.dict_mol2ind[args.dbid],ind)) 
-                couples_predict_arr = np.array(list_couples_predict)
-
-            model.predict(couples_predict_arr, R, intMat)
-
-            pred_per_clf = []
-            for prot_ind, mol_ind in list_couples_predict:
-                pred_per_clf.append(model.pred[DB.drugs.dict_mol2ind[mol_id], 
-                                               DB.proteins.dict_prot2ind[prot_id]])
-            
-            pred[:, iclf] = pred_per_clf
     
-    else:
+    for iclf in range(nb_clf):
 
-    # Post-processing
+        train_dataset = list_train_datasets[iclf]
+
+        # W is a binary matrix to indicate what are the train data (pairs that can be used to train)
+        W = np.zeros(intMat.shape)
+        for prot_id, mol_id in train_dataset.list_couples:
+            W[DB.drugs.dict_mol2ind[mol_id], DB.proteins.dict_prot2ind[prot_id]] = 1
+
+        # R is a filter of W on intMat
+        R = W * intMat
+        
+        model.fix_model(W=W,
+                        intMat=intMat, 
+                        drugMat=DB_drugs_kernel_final, 
+                        targetMat=DB_proteins_kernel, 
+                        seed=seed)
+
+        # Prepare the test dataset
+        list_couples_predict = []
+        for ind in range(DB.proteins.nb):
+            list_couples_predict.append((DB.drugs.dict_mol2ind[args.dbid],ind)) 
+            couples_predict_arr = np.array(list_couples_predict)
+
+        # Process the predictions 
+        predictions_output = model.predict(couples_predict_arr, R, intMat)
+
+        pred_per_clf = []
+        for mol_ind, prot_ind in couples_predict_arr:
+            pred_per_clf.append(predictions_output[mol_ind, 
+                                                   prot_ind])
+        
+        pred[:, iclf] = pred_per_clf
+
+    # Post-processing ans saving file
 
     raw_df = pd.read_csv(root + raw_data_dir + \
                          'drugbank_small_molecule_target_polypeptide_ids.csv/all.csv',
@@ -158,10 +174,23 @@ if __name__ == "__main__":
     raw_df = raw_df.fillna('')
 
     pred_clean = predictions_postprocess_drug(predictions_output=pred,
-                                              DB=preprocessed_DB,
+                                              DB=DB,
                                               raw_proteins_df=raw_df)
 
     pred_clean_final = pred_clean.drop_duplicates()
+
+    now = datetime.now()
+    date_time = now.strftime("%Y%m%d")
+    if args.center_norm == True:
+        clean_filename = pred_dirname + pattern_name + "_NRLMF_centered_norm_" + \
+            args.dbid + '_pred_clean_' + date_time + '.csv'
+    elif args.norm == True:
+        clean_filename = pred_dirname + pattern_name + "_NRLMF_norm_" + \
+            args.dbid + '_pred_clean_' + date_time + '.csv'
+    else:
+        clean_filename = pred_dirname + pattern_name + '_NRLMF_' +args.dbid\
+        + '_pred_clean_' + date_time + '.csv'
+
     pred_clean_final.to_csv(clean_filename)
 
     print("Predictions done and saved.")

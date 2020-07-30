@@ -63,3 +63,31 @@ def get_nb_interactions_per_prot(list_train_datasets, DB_version, DB_type):
             positive and negative interactions per protein.")
     
     return final_nb_interactions
+
+def is_orphan(list_train_datasets, dbid):
+
+    nb_clf =len(list_train_datasets)
+
+    list_bool_orphan = []
+
+    for iclf in range(nb_clf):
+
+        train_dataset = pd.DataFrame(list_train_datasets[iclf].array, columns=['UniProt ID', 
+                                                                               'DrugbankID', 
+                                                                               'interaction_bool'])
+        if dbid[:2] == 'DB':
+            dbid_interactions = train_dataset[train_dataset['DrugbankID']==dbid]
+        else:
+            dbid_interactions = train_dataset[train_dataset['UniProt ID']==dbid]
+
+        if dbid_interactions.shape[0]>0:
+            list_bool_orphan.append(np.all(dbid_interactions['interaction_bool']=='0'))
+        else:
+            list_bool_orphan.append(True)
+
+    if np.all(list_bool_orphan):
+        print(dbid, "is orphan in all the train datasets.")
+        print(list_bool_orphan)
+    else: 
+        print("Warning:", dbid, " is not orphan in the train datasets")
+        print(list_bool_orphan)

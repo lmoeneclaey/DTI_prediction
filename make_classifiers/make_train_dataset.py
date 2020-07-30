@@ -154,8 +154,9 @@ if __name__ == "__main__":
 
     corrected_DB = copy.deepcopy(preprocessed_DB)
 
-    for dbid in args.orphan:
-        corrected_DB = get_orphan(DB=corrected_DB, dbid=dbid)
+    if args.orphan is not None:
+        for dbid in args.orphan:
+            corrected_DB = get_orphan(DB=corrected_DB, dbid=dbid)
 
     if args.correct_interactions == True:
 

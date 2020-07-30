@@ -5,14 +5,14 @@
 #SBATCH --mem 20000
 
 # CP7q
-python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan CP7q --norm
+python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan CP7q --center_norm
 # NPPB
-python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan NPPB --norm
+python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan NPPB --center_norm
 # NS004
-python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan NS004 --norm
+python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan NS004 --center_norm
 # NS1619
-python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan NS1619 --norm
+python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan NS1619 --center_norm
 # P8
-python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan P8 --norm
+python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan P8 --center_norm
 # VRT-532
-python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan VRT-532 --norm
+python predict/kronSVM/kronSVM_pred_for_drug.py drugbank_v5.1.5 S0h vertex-modulators-orphan VRT-532 --center_norm

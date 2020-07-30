@@ -7,8 +7,6 @@ import os
 from sklearn.metrics import precision_recall_curve, roc_curve
 from sklearn.metrics import auc
 
-
-
 class NRLMF:
 
     def __init__(self, cfix=5, K1=5, K2=5, num_factors=10, theta=1.0, lambda_d=0.625,
@@ -118,18 +116,27 @@ class NRLMF:
     def fix_model(self, W, intMat, drugMat, targetMat, seed=None):
         self.num_drugs, self.num_targets = intMat.shape
         self.ones = np.ones((self.num_drugs, self.num_targets))
+        # self.intMat is like the R defined in the main function
         self.intMat = self.cfix * intMat * W
         self.intMat1 = (self.cfix - 1) * intMat * W + self.ones
         x, y = np.where(self.intMat > 0)
+        # self.train_drugs and self.train_targets are defined here
         self.train_drugs, self.train_targets = set(x.tolist()), set(y.tolist())
         self.construct_neighborhood(drugMat, targetMat)
         self.AGD_optimization(seed)
 
     def predict_scores(self, test_data, N):
+        # trouver la signification de DS
+        # trouver la signification de TS
+
         dinx = np.array(list(self.train_drugs))
+        # DS est la matrice des similarités pour les molécules du traindataset
         DS = self.dsMat[:, dinx]
+        
         tinx = np.array(list(self.train_targets))
+        # TS est la matrice des similarités
         TS = self.tsMat[:, tinx]
+        
         scores = []
         for d, t in test_data:
             if d in self.train_drugs:
@@ -190,7 +197,10 @@ class NRLMF:
         auc_val = auc(fpr, tpr)
         return aupr_val, auc_val, np.array(scores)
 
-    def predict(self, test_data, R, intMat_for_verbose, true_test_data=None):
+    def predict(self, test_data, intMat_for_verbose, true_test_data=None):
+        
+        self.predictions = np.full(intMat_for_verbose.shape, np.inf)
+        
         iii, jjj = test_data[:, 0], test_data[:, 1]
 
         dinx = np.array(list(self.train_drugs))
@@ -249,13 +259,15 @@ class NRLMF:
                 scores.append(np.exp(val) / (1 + np.exp(val)))
         if true_test_data is not None:
             iii, jjj = true_test_data[:, 0], true_test_data[:, 1]
-            self.pred[iii, jjj] = scores
+            self.predictions[iii, jjj] = scores
         else:
-            self.pred[iii, jjj] = scores
+            self.predictions[iii, jjj] = scores
+
+        return self.predictions
 
     def get_perf(self, intMat):
-        pred_ind = np.where(self.pred != np.inf)
-        pred_local = self.pred[pred_ind[0], pred_ind[1]]
+        pred_ind = np.where(self.predictions!=np.inf)
+        pred_local = self.predictions[pred_ind[0], pred_ind[1]]
         test_local = intMat[pred_ind[0], pred_ind[1]]
         prec, rec, thr = precision_recall_curve(test_local, pred_local)
         aupr_val = auc(rec, prec)
