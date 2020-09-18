@@ -2,8 +2,6 @@
 [1] Yong Liu, Min Wu, Chunyan Miao, Peilin Zhao, Xiao-Li Li, "Neighborhood Regularized Logistic Matrix Factorization for Drug-target Interaction Prediction", under review.
 '''
 import numpy as np
-import os
-
 from sklearn.metrics import precision_recall_curve, roc_curve
 from sklearn.metrics import auc
 
@@ -126,9 +124,7 @@ class NRLMF:
         self.AGD_optimization(seed)
 
     def predict_scores(self, test_data, N):
-        # trouver la signification de DS
-        # trouver la signification de TS
-
+        
         dinx = np.array(list(self.train_drugs))
         # DS est la matrice des similarités pour les molécules du traindataset
         DS = self.dsMat[:, dinx]
@@ -144,19 +140,38 @@ class NRLMF:
                     val = np.sum(self.U[d, :] * self.V[t, :])
                 else:
                     jj = np.argsort(TS[t, :])[::-1][:N]
-                    val = np.sum(self.U[d, :] * np.dot(TS[t, jj], self.V[tinx[jj], :])) / \
-                        np.sum(TS[t, jj])
+                    ## Ad
+                    if np.count_nonzero(TS[t, jj])!=0:
+                        val = np.sum(self.U[d, :]*np.dot(TS[t, jj], self.V[tinx[jj], :]))/np.sum(TS[t, jj])
+                    else:
+                        val = -np.inf
+                    ##
             else:
                 if t in self.train_targets:
                     ii = np.argsort(DS[d, :])[::-1][:N]
-                    val = np.sum(np.dot(DS[d, ii], self.U[dinx[ii], :]) * self.V[t, :]) / \
-                        np.sum(DS[d, ii])
+                    ##
+                    if np.count_nonzero(DS[d, ii])!=0:
+                        val = np.sum(np.dot(DS[d, ii], self.U[dinx[ii], :])*self.V[t, :])/np.sum(DS[d, ii])
+                    else:
+                        val = -np.inf
+                    ##
                 else:
                     ii = np.argsort(DS[d, :])[::-1][:N]
                     jj = np.argsort(TS[t, :])[::-1][:N]
-                    v1 = DS[d, ii].dot(self.U[dinx[ii], :]) / np.sum(DS[d, ii])
-                    v2 = TS[t, jj].dot(self.V[tinx[jj], :]) / np.sum(TS[t, jj])
-                    val = np.sum(v1 * v2)
+                    ##
+                    if np.count_nonzero(DS[d, ii])!=0:
+                        v1 = DS[d, ii].dot(self.U[dinx[ii], :])/np.sum(DS[d, ii])
+                    else:
+                        v1 = -np.inf
+                    if np.count_nonzero(TS[t, jj])!=0:
+                        v2 = TS[t, jj].dot(self.V[tinx[jj], :])/np.sum(TS[t, jj])
+                    else:
+                        v2 = -np.inf
+                    if np.all(v1)==-np.inf and np.all(v2)==-np.inf:
+                        val = -np.inf
+                    else:
+                        val = np.sum(v1*v2)
+                    ##
             scores.append(np.exp(val) / (1 + np.exp(val)))
         return np.array(scores)
 
@@ -173,19 +188,38 @@ class NRLMF:
                         val = np.sum(self.U[d, :] * self.V[t, :])
                     else:
                         jj = np.argsort(TS[t, :])[::-1][:self.K2]
-                        val = np.sum(self.U[d, :] * np.dot(TS[t, jj], self.V[tinx[jj], :])) / \
-                            np.sum(TS[t, jj])
+                        ## Ad
+                        if np.count_nonzero(TS[t, jj])!=0:
+                            val = np.sum(self.U[d, :]*np.dot(TS[t, jj], self.V[tinx[jj], :]))/np.sum(TS[t, jj])
+                        else:
+                            val = -np.inf
+                        ##
                 else:
                     if t in self.train_targets:
                         ii = np.argsort(DS[d, :])[::-1][:self.K2]
-                        val = np.sum(np.dot(DS[d, ii], self.U[dinx[ii], :]) * self.V[t, :]) / \
-                            np.sum(DS[d, ii])
+                        ##
+                        if np.count_nonzero(DS[d, ii])!=0:
+                            val = np.sum(np.dot(DS[d, ii], self.U[dinx[ii], :])*self.V[t, :])/np.sum(DS[d, ii])
+                        else:
+                            val = -np.inf
+                        ##
                     else:
                         ii = np.argsort(DS[d, :])[::-1][:self.K2]
                         jj = np.argsort(TS[t, :])[::-1][:self.K2]
-                        v1 = DS[d, ii].dot(self.U[dinx[ii], :]) / np.sum(DS[d, ii])
-                        v2 = TS[t, jj].dot(self.V[tinx[jj], :]) / np.sum(TS[t, jj])
-                        val = np.sum(v1 * v2)
+                        ##
+                        if np.count_nonzero(DS[d, ii])!=0:
+                            v1 = DS[d, ii].dot(self.U[dinx[ii], :])/np.sum(DS[d, ii])
+                        else:
+                            v1 = -np.inf
+                        if np.count_nonzero(TS[t, jj])!=0:
+                            v2 = TS[t, jj].dot(self.V[tinx[jj], :])/np.sum(TS[t, jj])
+                        else:
+                            v2 = -np.inf
+                        if np.all(v1)==-np.inf and np.all(v2)==-np.inf:
+                            val = -np.inf
+                        else:
+                            val = np.sum(v1*v2)
+                        ##
                 scores.append(np.exp(val) / (1 + np.exp(val)))
         elif self.K2 == 0:
             for d, t in test_data:
@@ -210,7 +244,7 @@ class NRLMF:
         scores = []
         if self.K2 > 0:
             for dd, tt in test_data:
-                casse = False
+                # casse = False
                 # print('d', dd, 'label', intMat_for_verbose[dd, tt])
                 # if dd == 33:
                 #     import pdb; pdb.Pdb().set_trace()
@@ -221,38 +255,61 @@ class NRLMF:
                         val = np.sum(self.U[dd, :] * self.V[tt, :])
                     else:
                         jj = np.argsort(TS[tt, :])[::-1][:self.K2]
-                        val = np.sum(self.U[dd, :] * np.dot(TS[tt, jj], self.V[tinx[jj], :])) / \
-                            np.sum(TS[tt, jj])
+                        ## Ad
+                        if np.count_nonzero(TS[tt, jj])!=0:
+                            val = np.sum(self.U[dd, :]*np.dot(TS[tt, jj], self.V[tinx[jj], :]))/np.sum(TS[tt, jj])
+                        else:
+                            val = -np.inf
+                        ##
                 else:
                     if tt in self.train_targets:
                         # print('in selftrain targets')
                         ii = np.argsort(DS[dd, :])[::-1][:self.K2]
-                        val = np.sum(np.dot(DS[dd, ii], self.U[dinx[ii], :]) * self.V[tt, :]) / \
-                            np.sum(DS[dd, ii])
+                        ##
+                        if np.count_nonzero(DS[dd, ii])!=0:
+                            val = np.sum(np.dot(DS[dd, ii], self.U[dinx[ii], :])*self.V[tt, :])/np.sum(DS[dd, ii])
+                        else:
+                            val = -np.inf
+                        ##
                     else:
                         ii = np.argsort(DS[dd, :])[::-1][:self.K2]
                         jj = np.argsort(TS[tt, :])[::-1][:self.K2]
                         # if d == 413:
                         #     import pdb; pdb.Pdb().set_trace()
-                        if np.sum(DS[dd, ii]) == 0 or np.sum(TS[tt, jj]) == 0:
-                            val = -100
-                            casse = True
+                        # if np.sum(DS[dd, ii]) == 0 or np.sum(TS[tt, jj]) == 0:
+                        #     val = -100
+                        #     casse = True
+                        # else:
+                        #     v1 = DS[dd, ii].dot(self.U[dinx[ii], :]) / np.sum(DS[dd, ii])
+                        #     v2 = TS[tt, jj].dot(self.V[tinx[jj], :]) / np.sum(TS[tt, jj])
+                        #     # print(v1, self.U[dinx[ii], :], DS[dd, ii],
+                        #     #       DS[dd, ii].dot(self.U[dinx[ii], :]), np.sum(DS[dd, ii]))
+                        #     # print(v2, self.V[tinx[jj], :], TS[tt, jj],
+                        #     #       TS[tt, jj].dot(self.V[tinx[jj], :]), np.sum(TS[tt, jj]))
+                        #     val = np.sum(v1 * v2)
+                        ##
+                        if np.count_nonzero(DS[dd, ii])!=0:
+                            v1 = DS[dd, ii].dot(self.U[dinx[ii], :])/np.sum(DS[dd, ii])
                         else:
-                            v1 = DS[dd, ii].dot(self.U[dinx[ii], :]) / np.sum(DS[dd, ii])
-                            v2 = TS[tt, jj].dot(self.V[tinx[jj], :]) / np.sum(TS[tt, jj])
-                            # print(v1, self.U[dinx[ii], :], DS[dd, ii],
-                            #       DS[dd, ii].dot(self.U[dinx[ii], :]), np.sum(DS[dd, ii]))
-                            # print(v2, self.V[tinx[jj], :], TS[tt, jj],
-                            #       TS[tt, jj].dot(self.V[tinx[jj], :]), np.sum(TS[tt, jj]))
-                            val = np.sum(v1 * v2)
-                ss = np.exp(val) / (1 + np.exp(val))
-                if not (np.isinf(ss) or np.isnan(ss)) and not casse:
-                    scores.append(ss)
-                else:
-                    print('casse')
-                    scores.append(np.random.random())
+                            v1 = -np.inf
+                        if np.count_nonzero(TS[tt, jj])!=0:
+                            v2 = TS[tt, jj].dot(self.V[tinx[jj], :])/np.sum(TS[tt, jj])
+                        else:
+                            v2 = -np.inf
+                        if np.all(v1)==-np.inf and np.all(v2)==-np.inf:
+                            val = -np.inf
+                        else:
+                            val = np.sum(v1*v2)
+                        ##
+                #ss = np.exp(val) / (1 + np.exp(val))
+                # if not (np.isinf(ss) or np.isnan(ss)) and not casse:
+                    # scores.append(ss)
+                # else:
+                    # print('casse')
+                    # scores.append(np.random.random())
                 # print(casse, val, scores[-1], round(scores[-1]))
                 # print('')
+                scores.append(np.exp(val)/(1+np.exp(val)))
         elif self.K2 == 0:
             for d, t in test_data:
                 val = np.sum(self.U[d, :] * self.V[t, :])

@@ -1,14 +1,14 @@
 import argparse
 import copy 
+import os
+import numpy as np
 import pandas as pd
 import pickle
-import numpy as np
-import os
 
 from datetime import datetime
 
 from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
-from DTI_prediction.process_dataset.DB_utils import check_drug, get_couples_from_array, add_drug
+from DTI_prediction.process_dataset.DB_utils import check_drug, get_couples_from_array, add_drug, get_intMat
 from DTI_prediction.process_dataset.get_molecules_smiles import get_non_DrugBank_smile
 from DTI_prediction.process_dataset.process_DB import get_DB
 from DTI_prediction.make_kernels.get_kernels import get_K_mol_K_prot
@@ -77,8 +77,10 @@ if __name__ == "__main__":
     # Modify the drugs kernel if the drug is not in the DrugBank database
     if check_drug(args.dbid, DB.drugs)==True:
 
+        DB_drugs_final = copy.deepcopy(DB.drugs)    
         DB_drugs_kernel_final = copy.deepcopy(DB_drugs_kernel)
-    
+        intMat_final = (DB.intMat).T
+
     else:
         print(args.dbid, "is not in the database.")
 
@@ -87,30 +89,55 @@ if __name__ == "__main__":
         print("The sdf file for", args.dbid, "is downloaded.")
 
         # add the drug to the list of drugs
-        DB_drugs_updated = add_drug(drugs = DB.drugs,
-                                    drug_id = args.dbid,
-                                    smile = drug_smile)
+        DB_drugs_final = add_drug(drugs = DB.drugs,
+                                  drug_id = args.dbid,
+                                  smile = drug_smile)
 
         # make_new_K_mol, the normalise part should be included after confirmation
-        DB_drugs_kernel_updated = make_mol_kernel(DB_drugs_updated)[1]
+        DB_drugs_kernel_updated = make_mol_kernel(DB_drugs_final)[1]
 
         if args.center_norm == True:
             DB_drugs_kernel_final = center_and_normalise_kernel(DB_drugs_kernel_updated)
         elif args.norm == True:
             DB_drugs_kernel_final = normalise_kernel(DB_drugs_kernel_updated)
 
+        intMat_updated = get_intMat(DB_drugs_final, DB.proteins, DB.couples)
+        intMat_final = intMat_updated.T
+
     # Get the train datasets
     train_datasets_array_filename = train_datasets_dirname + pattern_name + \
         '_train_datasets_array.data'
     train_datasets_array = pickle.load(open(train_datasets_array_filename, 'rb'))
 
-    nb_clf = len(train_datasets_array)
+    # nb_clf = len(train_datasets_array)
+    # print(nb_clf)
 
-    list_train_datasets = []
-    for iclf in range(nb_clf):
-        train_dataset = get_couples_from_array(train_datasets_array[iclf])
-        list_train_datasets.append(train_dataset)
+    # list_train_datasets = []
+    # for iclf in range(nb_clf):
+    #     train_dataset = get_couples_from_array(train_datasets_array[iclf])
+    #     list_train_datasets.append(train_dataset)
 
+    # pred = np.zeros((DB.proteins.nb, nb_clf))
+    
+    # for iclf in range(nb_clf):
+
+    # train_dataset = list_train_datasets[iclf]
+
+    # W is a binary matrix to indicate what are the train data (pairs that can be used to train)
+    # W = np.zeros(intMat.shape)
+    # for prot_id, mol_id in train_dataset.list_couples:
+    #     W[DB.drugs.dict_mol2ind[mol_id], DB.proteins.dict_prot2ind[prot_id]] = 1
+
+    train_dataset = pd.DataFrame(train_datasets_array[0], columns=['UniProt ID', 
+                                                                   'DrugbankID', 
+                                                                   'interaction_bool'])
+    train_true_interactions = train_dataset[train_dataset['interaction_bool']=='1']
+    train_true_interactions_np = train_true_interactions.to_numpy()
+    train_true = get_couples_from_array(train_true_interactions_np)
+
+    train_intMat = np.zeros(intMat_final.shape)
+    for prot_id, mol_id in train_true.list_couples:
+        train_intMat[DB_drugs_final.dict_mol2ind[mol_id], DB.proteins.dict_prot2ind[prot_id]] = 1
 
     # Prepare the NRLMF classifier
     seed=92
@@ -128,43 +155,31 @@ if __name__ == "__main__":
                   theta=best_param['theta'],
                   max_iter=best_param['max_iter'])
 
-    # Predictions
-    intMat = (DB.intMat).T
-    pred = np.zeros((DB.proteins.nb, nb_clf))
+    # model.fix_model(W=W,
+    model.fix_model(W=train_intMat,
+                    intMat=train_intMat, 
+                    drugMat=DB_drugs_kernel_final, 
+                    targetMat=DB_proteins_kernel, 
+                    seed=seed)
+
+    # Prepare the test dataset
+    list_couples_predict = []
+    for ind in range(DB.proteins.nb):
+        list_couples_predict.append((DB_drugs_final.dict_mol2ind[args.dbid],ind)) 
+        couples_predict_arr = np.array(list_couples_predict)
+
+    # Process the predictions 
+    predictions_output = model.predict(couples_predict_arr, train_intMat)
+
+    pred_per_clf = []
+    for mol_ind, prot_ind in couples_predict_arr:
+        pred_per_clf.append(predictions_output[mol_ind, 
+                                                prot_ind])
+
+    predictions_df = pd.DataFrame({'UniProt ID' : list(DB.proteins.dict_protein.keys()),
+                                   'prediction': pred_per_clf})
     
-    for iclf in range(nb_clf):
-
-        train_dataset = list_train_datasets[iclf]
-
-        # W is a binary matrix to indicate what are the train data (pairs that can be used to train)
-        W = np.zeros(intMat.shape)
-        for prot_id, mol_id in train_dataset.list_couples:
-            W[DB.drugs.dict_mol2ind[mol_id], DB.proteins.dict_prot2ind[prot_id]] = 1
-
-        # R is a filter of W on intMat
-        R = W * intMat
-        
-        model.fix_model(W=W,
-                        intMat=intMat, 
-                        drugMat=DB_drugs_kernel_final, 
-                        targetMat=DB_proteins_kernel, 
-                        seed=seed)
-
-        # Prepare the test dataset
-        list_couples_predict = []
-        for ind in range(DB.proteins.nb):
-            list_couples_predict.append((DB.drugs.dict_mol2ind[args.dbid],ind)) 
-            couples_predict_arr = np.array(list_couples_predict)
-
-        # Process the predictions 
-        predictions_output = model.predict(couples_predict_arr, R, intMat)
-
-        pred_per_clf = []
-        for mol_ind, prot_ind in couples_predict_arr:
-            pred_per_clf.append(predictions_output[mol_ind, 
-                                                   prot_ind])
-        
-        pred[:, iclf] = pred_per_clf
+    # pred[:, iclf] = pred_per_clf
 
     # Post-processing ans saving file
 
@@ -173,11 +188,30 @@ if __name__ == "__main__":
                          sep=",")
     raw_df = raw_df.fillna('')
 
-    pred_clean = predictions_postprocess_drug(predictions_output=pred,
-                                              DB=DB,
-                                              raw_proteins_df=raw_df)
+    # pred_clean = predictions_postprocess_drug(predictions_output=pred,
+    #                                           DB=DB,
+    #                                           raw_proteins_df=raw_df)
 
-    pred_clean_final = pred_clean.drop_duplicates()
+    # pred_clean_final = pred_clean.drop_duplicates()
+
+    pred_clean_final = pd.merge(predictions_df,
+                                raw_df[['UniProt ID', 'Gene Name', 'Name']],
+                                left_on='UniProt ID',
+                                right_on='UniProt ID')
+
+    cols = ['UniProt ID', 'Gene Name', 'Name', 'prediction']
+    pred_clean_final = pred_clean_final[cols]
+    pred_clean_final = pred_clean_final.sort_values(by='prediction', 
+                                                            ascending=False)
+    pred_clean_final = pred_clean_final.drop_duplicates()
+
+    # New DTI label
+
+    dbid_interactions = train_dataset[(train_dataset['DrugbankID']==args.dbid) &
+                                        (train_dataset['interaction_bool']=='1')]
+    pred_clean_final['New DTI'] = ~pred_clean_final['UniProt ID'].isin(dbid_interactions['UniProt ID'])
+
+    # add a column on new interactions
 
     now = datetime.now()
     date_time = now.strftime("%Y%m%d")

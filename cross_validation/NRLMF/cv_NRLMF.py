@@ -93,7 +93,7 @@ if __name__ == "__main__":
         for prot_id, mol_id in test_couples:
             list_couples_predict.append((DB.drugs.dict_mol2ind[mol_id], 
                                          DB.proteins.dict_prot2ind[prot_id]))
-            couples_predict_arr = np.array(list_couples_predict)
+        couples_predict_arr = np.array(list_couples_predict)
 
         pred = []
 
@@ -116,7 +116,8 @@ if __name__ == "__main__":
                             seed=seed)
 
             # Process the predictions 
-            predictions_output = model.predict(couples_predict_arr, R, intMat)
+            predictions_output = model.predict(test_data=couples_predict_arr, 
+                                               intMat_for_verbose=intMat)
 
             pred_per_clf = []
             for mol_ind, prot_ind in couples_predict_arr:

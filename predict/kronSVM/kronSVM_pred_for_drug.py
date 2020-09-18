@@ -192,6 +192,12 @@ if __name__ == "__main__":
                                               raw_proteins_df=raw_df)
 
     pred_clean_final = pred_clean.drop_duplicates()
-    pred_clean_final.to_csv(clean_filename)
 
+    # New DTI label
+    train_dataset = list_train_datasets[0]
+    dbid_interactions = train_dataset[(train_dataset['DrugbankID']==args.dbid) &
+                                        (train_dataset['interaction_bool']=='1')]
+    pred_clean_final['New DTI'] = ~pred_clean_final['UniProt ID'].isin(dbid_interactions['UniProt ID'])
+
+    pred_clean_final.to_csv(clean_filename)
     print("Predictions done and saved.")
