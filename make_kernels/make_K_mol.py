@@ -155,14 +155,30 @@ if __name__ == "__main__":
 
     # kernels directory
     kernels_dir = root + data_dir + 'kernels/'
-    os.mkdir(kernels_dir)
+    if not os.path.exists(kernels_dir):
+        os.mkdir(kernels_dir)
+        print("Kernels directory for", args.DB_type, ",", args.DB_version,
+        "created.")
+    else:
+        print("Kernels directory for", args.DB_type, ",", args.DB_version,
+        "already exists.")
+
+    # features directory
+    features_dir = root + data_dir + 'features/'
+    if not os.path.exists(features_dir):
+        os.mkdir(features_dir)
+        print("Features directory for", args.DB_type, ",", args.DB_version,
+        "created.")
+    else:
+        print("Features directory for", args.DB_type, ",", args.DB_version,
+        "already exists.")
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
     
     X_fingerprint, K = make_mol_kernel(preprocessed_DB.drugs)
 
     pickle.dump(X_fingerprint,
-                open(kernels_dir + args.DB_type + '_X_ChemFingerprint.data',
+                open(features_dir + args.DB_type + '_mol_ChemFingerprint.data',
                 'wb'))
 
     # normalized or unnormalized

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=VMO_train_datasets
-#SBATCH --output=/mnt/data4/mnajm/CFTR_PROJECT/log/VMO_train_datasets_20200725.log
-#SBATCH --error=/mnt/data4/mnajm/CFTR_PROJECT/log/VMO_train_datasets_20200725.err
+#SBATCH --output=/mnt/data4/mnajm/CFTR_PROJECT/log/VMO_train_datasets_20201019.log
+#SBATCH --error=/mnt/data4/mnajm/CFTR_PROJECT/log/VMO_train_datasets_20201019.err
 #SBATCH --mem 20000
 
 # vertex modulators orphan

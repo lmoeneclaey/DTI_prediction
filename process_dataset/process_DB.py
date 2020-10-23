@@ -33,17 +33,18 @@ def process_DB(DB_version, DB_type):
     Writes 11 outputs:
         - [...]_dict_DBid2smiles.data dict keys : DrugBankID values : smile
         - [...]_dict_uniprot2fasta.data dict keys : UniprotID values : fasta
-        - [...]_list_interactions.data list [(UniprotID, DrugBankID)]
-
+        
         - [...]_DBid2smiles.tsv tsv file of the previous data file
         - [...]_uniprot2fasta.tsv tsv file of the previous data file
-        - [...]_interactions.tsv tsv file of the previous data file
         
         - [...]_dict_ind2mol.data dict keys : ind values : DrugBankID
         - [...]_dict_mol2ind.data dict keys : DrugBankID values : ind
         - [...]_dict_ind2_prot.data dict keys : ind values : UniprotID
         - [...]_dict_prot2ind.data dict keys : UniprotID values : ind
+        
         - [...]_dict_intMat.npy : matrix of interaction
+        - [...]_interactions.tsv tsv file of the previous data file
+        - [...]_list_interactions.data list [(UniprotID, DrugBankID)]
 
     Parameters
     ----------
@@ -94,7 +95,15 @@ def process_DB(DB_version, DB_type):
 
     # preprocessed directory
     preprocessed_data_dir = root + data_dir + 'preprocessed/'
-    os.mkdir(preprocessed_data_dir)
+
+    if not os.path.exists(preprocessed_data_dir):
+        os.mkdir(preprocessed_data_dir)
+        print("Preprocessed data directory for", DB_type, ",", DB_version,
+        "created.")
+    else:
+        print("Preprocessed data directory for", DB_type, ",", DB_version,
+        "already exists.")
+    # os.mkdir(preprocessed_data_dir)
 
     pickle.dump(dict_id2smile_inter_sorted,
                 open(preprocessed_data_dir + DB_type +

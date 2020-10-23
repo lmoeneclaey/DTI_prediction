@@ -60,8 +60,12 @@ if __name__ == "__main__":
         os.mkdir(root + data_dir + '/' + 'predictions')
         print("Predictions directory for", pattern_name, ",", args.DB_version,
         "created.")
+    if not os.path.exists(root + data_dir + '/' + 'predictions/kronSVM'):
+        os.mkdir(root + data_dir + '/' + 'predictions/kronSVM')
+        print("kronSVM predictions directory for", pattern_name, ",", args.DB_version,
+        "created.")
 
-    pred_dirname = root + data_dir + 'predictions/'
+    pred_dirname = root + data_dir + 'predictions/kronSVM/'
     clf_dirname = root + data_dir + 'classifiers/kronSVM/'
     train_datasets_dirname = root + data_dir + '/classifiers/train_datasets/'
 
@@ -116,16 +120,6 @@ if __name__ == "__main__":
         train_dataset = get_couples_from_array(train_datasets_array[iclf])
         list_train_datasets.append(train_dataset)
 
-    # train_datasets_filename = clf_dirname + pattern_name + \
-    #     '_kronSVM_list_train_datasets.data'
-    # list_train_datasets = pickle.load(open(train_datasets_filename, 'rb'))
-
-    # list_couples_of_clf = []
-    # for iclf in range(nb_clf):
-    #     train_dataset = list_train_datasets[iclf]
-    #     train_couples = get_couples_from_array(train_dataset)
-    #     list_couples_of_clf.append(train_couples.list_couples)
-
     # Process the predictions
     pred = np.zeros((DB_proteins.nb, nb_clf))
 
@@ -135,7 +129,6 @@ if __name__ == "__main__":
         for iclf in range(nb_clf):
 
             train_dataset = list_train_datasets[iclf]
-            # train_couples = get_couples_from_array(train_dataset)
 
             K_predict = make_K_predict_drug(dbid = args.dbid,
                                             drugs = preprocessed_DB.drugs,
@@ -167,7 +160,6 @@ if __name__ == "__main__":
         for iclf in range(nb_clf):
 
             train_dataset = list_train_datasets[iclf]
-            # train_couples = get_couples_from_array(train_dataset)
 
             K_predict = make_K_predict_drug(dbid = args.dbid,
                                             drugs = DB_drugs_updated,
@@ -177,8 +169,6 @@ if __name__ == "__main__":
                                             list_couples_train = train_dataset.list_couples)
 
             pred[:, iclf] = list_clf[iclf].predict_proba(K_predict)[:,1]
-
-    # pickle.dump(pred, open(output_filename, 'wb'))
 
     # Post-processing
 
@@ -194,7 +184,10 @@ if __name__ == "__main__":
     pred_clean_final = pred_clean.drop_duplicates()
 
     # New DTI label
-    train_dataset = list_train_datasets[0]
+    train_dataset = pd.DataFrame(train_datasets_array[0], columns=['UniProt ID', 
+                                                                   'DrugbankID', 
+                                                                   'interaction_bool'])
+
     dbid_interactions = train_dataset[(train_dataset['DrugbankID']==args.dbid) &
                                         (train_dataset['interaction_bool']=='1')]
     pred_clean_final['New DTI'] = ~pred_clean_final['UniProt ID'].isin(dbid_interactions['UniProt ID'])

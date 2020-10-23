@@ -30,7 +30,7 @@ def get_test_folds(DB_version, DB_type):
     cv_dirname = root + data_dir + '/cross_validation/'
 
     test_folds_array_filename = cv_dirname + 'test_folds/' \
-        + DB_type + '_test_folds_array.data'
+        + DB_type + '_test_folds_array_20200724.data'
 
     test_folds_array = pickle.load(open(test_folds_array_filename, 'rb'))
     nb_folds = len(test_folds_array)
@@ -67,7 +67,7 @@ def get_train_folds(DB_version, DB_type):
     cv_dirname = root + data_dir + '/cross_validation/'
 
     train_folds_array_filename = cv_dirname + 'train_folds/' \
-        + DB_type + '_train_folds_array.data'
+        + DB_type + '_train_folds_array_20200724.data'
 
     train_folds_array = pickle.load(open(train_folds_array_filename, 'rb'))
     

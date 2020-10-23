@@ -162,7 +162,7 @@ class OnAllValDataEarlyStopping(keras.callbacks.Callback):
         elif mode == 'max':
             self.monitor_op = np.greater
 
-        if self.monitor in ['aupr', 'rocauc', 'acc', 'f1']:
+        if self.monitor in ['aupr', 'rocauc', 'acc', 'f1', 'precision']:
             self.pb = 'clf'
             self.val_auprs = []
             self.val_rocaucs = []
@@ -202,6 +202,8 @@ class OnAllValDataEarlyStopping(keras.callbacks.Callback):
             return dict_perf['ACC'][0], dict_perf
         elif self.monitor == 'f1':
             return dict_perf['F1'][0], dict_perf
+        elif self.monitor == 'precision':
+            return dict_perf['Precision'][0], dict_perf
         elif self.monitor == 'mse':
             return dict_perf['MSE'][0], dict_perf
 

@@ -12,7 +12,7 @@ from DTI_prediction.make_kernels.get_kernels import get_K_mol_K_prot
 
 # from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset
 from DTI_prediction.cross_validation.kronSVM.cv_make_K_test import make_K_test
-from DTI_prediction.cross_validation.make_folds.cv_get_folds import get_test_folds, get_train_folds
+# from DTI_prediction.cross_validation.make_folds.cv_get_folds import get_test_folds, get_train_folds
 
 root = './../CFTR_PROJECT/'
 
@@ -29,8 +29,8 @@ if __name__ == "__main__":
     parser.add_argument("DB_type", type = str,
                         help = "the DrugBank type, example: 'S0h'")
 
-    parser.add_argument("nb_clf", type = int,
-                        help = "number of classifiers for future predictions, example = 5")
+    # parser.add_argument("nb_clf", type = int,
+    #                     help = "number of classifiers for future predictions, example = 5")
 
     parser.add_argument("C", type = int,
                         help = "C hyperparameter in SVM algorithm")
@@ -56,31 +56,55 @@ if __name__ == "__main__":
 
     kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.center_norm, args.norm)
 
-    # Get the test datasets
-    test_folds = get_test_folds(args.DB_version, args.DB_type)
+    # # Get the test datasets
+    # test_folds = get_test_folds(args.DB_version, args.DB_type)
+    # nb_folds = len(test_folds)
+
+    # Get the nested folds
+    nested_cv_dirname = root + data_dir + 'cross_validation/nested_folds/'
+    nested_folds_array_filename = nested_cv_dirname + args.DB_type + '_nested_folds_array.data'
+
+    nested_folds_array = pickle.load(open(nested_folds_array_filename, 'rb'))
+
+    list_folds = []
+    for ifold in range(len(nested_folds_array)):
+        fold_dataset = get_couples_from_array(nested_folds_array[ifold])
+        list_folds.append(fold_dataset)
+
+    test_folds = [[list_folds[0],list_folds[1]], 
+                  [list_folds[2],list_folds[3]], 
+                  [list_folds[4],list_folds[5]]]
+    train_folds = [[list_folds[2],list_folds[3],list_folds[4],list_folds[5]],
+                   [list_folds[0],list_folds[1],list_folds[4],list_folds[5]],
+                   [list_folds[0],list_folds[1],list_folds[2],list_folds[3]]] 
+
     nb_folds = len(test_folds)
 
     # get the classifiers
     if args.center_norm == True:
+        # cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
+        # '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_centered_norm.data'
+        # output_filename = kronsvm_cv_dirname + args.DB_type + \
+        # '_kronSVM_cv_C_' + str(str(args.C)) + '_' + str(args.nb_clf) + '_pred_centered_norm.data'
         cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_centered_norm.data'
+        '_kronSVM_cv_C_' + str(args.C) + '_nested_clf_centered_norm.data'
         output_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_C_' + str(str(args.C)) + '_' + str(args.nb_clf) + '_pred_centered_norm.data'
+        '_kronSVM_cv_C_' + str(args.C) + '_nested_pred_centered_norm.data'
     elif args.norm == True:
         cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
         '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_norm.data'
         output_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_C_' + str(str(args.C)) + '_' + str(args.nb_clf) + '_pred_norm.data'
+        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_pred_norm.data'
     else:
         cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-        '_kronSVM_cv_C_' + str(str(args.C)) + '_' + str(args.nb_clf) + '_clf.data'
+        '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf.data'
         output_filename = kronsvm_cv_dirname + args.DB_type + \
         '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_pred.data'
 
     cv_list_clf = pickle.load(open(cv_clf_filename, 'rb'))
 
-    # Get the train datasets
-    train_folds = get_train_folds(args.DB_version, args.DB_type)
+    # # Get the train datasets
+    # train_folds = get_train_folds(args.DB_version, args.DB_type)
 
     # cv_couples_filename = kronsvm_cv_dirname + args.DB_type + \
     # '_kronSVM_cv_C_' + str(args.C) + '_' + str(args.nb_clf) + '_clf_couples.data'
@@ -91,21 +115,30 @@ if __name__ == "__main__":
     for ifold in range(nb_folds):
         print(ifold)
 
-        pred = []
-        for iclf in range(args.nb_clf):
-            print(iclf)
+        # pred = []
+        # for iclf in range(args.nb_clf):
+        #     print(iclf)
 
-            train_dataset = train_folds[ifold][iclf]
-            # train_couples = get_couples_from_array(train_dataset) 
+        # train_dataset = train_folds[ifold][iclf]
+        # train_couples = get_couples_from_array(train_dataset) 
 
-            K_test = make_K_test(list_couples_train = train_dataset.list_couples, 
-                                 list_couples_test = test_folds[ifold].list_couples,
-                                 preprocessed_DB = preprocessed_DB,
-                                 kernels = kernels)
+        train_dataset = sum(train_folds[ifold])
 
-            clf = cv_list_clf[ifold][iclf]
-            pred.append(clf.predict_proba(K_test)[:,1])
-        cv_pred.append(pred)
+        test_dataset = sum(test_folds[ifold])
+
+        K_test = make_K_test(list_couples_train = train_dataset.list_couples, 
+                                # list_couples_test = test_folds[ifold].list_couples,
+                                list_couples_test = test_dataset.list_couples,
+                                preprocessed_DB = preprocessed_DB,
+                                kernels = kernels)
+
+        # clf = cv_list_clf[ifold][iclf]
+        # pred.append(clf.predict_proba(K_test)[:,1])
+        # cv_pred.append(pred)
+
+        clf = cv_list_clf[ifold]
+        cv_pred.append(clf.predict_proba(K_test)[:,1])
+
         print("Prediction for fold", ifold, "done.") 
 
     pickle.dump(cv_pred, open(output_filename, 'wb'))

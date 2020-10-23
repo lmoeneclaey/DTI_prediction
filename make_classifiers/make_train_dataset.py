@@ -11,7 +11,7 @@ from DTI_prediction.process_dataset.correct_interactions import get_orphan, corr
 
 root = './../CFTR_PROJECT/'
 
-def make_train_dataset(preprocessed_DB):
+def make_train_dataset(DB):
     """ 
     Get the list of all the couples that are in the train:
         - the "positive" (known) interactions (with indices ind_true_inter)
@@ -28,10 +28,10 @@ def make_train_dataset(preprocessed_DB):
 
     """ 
 
-    dict_ind2mol = preprocessed_DB.drugs.dict_ind2mol
-    dict_ind2prot = preprocessed_DB.proteins.dict_ind2prot
-    intMat = preprocessed_DB.intMat
-    interactions = preprocessed_DB.interactions
+    dict_ind2mol = DB.drugs.dict_ind2mol
+    dict_ind2prot = DB.proteins.dict_ind2prot
+    intMat = DB.intMat
+    interactions = DB.interactions
 
     # "POSITIVE" INTERACTIONS
 
@@ -41,7 +41,6 @@ def make_train_dataset(preprocessed_DB):
                                                             'Drugbank ID', 
                                                             'interaction_bool'])
 
-    proteins_count = dict(train_positive_interactions_pd['UniProt ID'].value_counts())
 
     # "NEGATIVE" INTERACTIONS
 
@@ -60,6 +59,9 @@ def make_train_dataset(preprocessed_DB):
                                                  'Drugbank ID':all_negative_interactions_drug_id,
                                                  'interaction_bool':0})
 
+    proteins_count = dict(train_positive_interactions_pd['UniProt ID'].value_counts())
+    drugs_count = dict(train_positive_interactions_pd['Drugbank ID'].value_counts())
+    
     # number of classifiers
     nb_clf = 5
 
@@ -67,23 +69,65 @@ def make_train_dataset(preprocessed_DB):
 
     for iclf in range(nb_clf):
 
-        all_prot_train_negative_interactions_one_clf_pd = []
+        remaining_drugs_count = copy.deepcopy(drugs_count)
+
+        all_prot_train_negative_interactions_one_clf_list = []
 
         for row_nb in range(len(proteins_count)):
+
             protein_id = list(proteins_count.keys())[row_nb]
-            nb_positive_interactions_in_train = proteins_count[protein_id]
+            nb_positive_interactions = proteins_count[protein_id]
 
             # get all the negative interactions concerning this protein
             negative_interactions_one_prot_pd = all_negative_interactions_pd[all_negative_interactions_pd['UniProt ID']==protein_id]
 
+            # remove the interactions involving drugs "already full in number of negative interactions"
+            possible_drugs = []
+            possible_frequent_hitters = []
+            possible_one_int_drug = []
+            for (drug, count) in remaining_drugs_count.items():
+                if count!=0:
+                    possible_drugs.append(drug)
+                    if count>1:
+                        possible_frequent_hitters.append(drug)
+                    else:
+                        possible_one_int_drug.append(drug)
+
             # sample among the negative interactions concerning this prot,
             # the number of positive interactions in the train dataset
-            train_negative_interactions_one_prot_one_clf_pd = negative_interactions_one_prot_pd.sample(nb_positive_interactions_in_train)
-            all_prot_train_negative_interactions_one_clf_pd.append(train_negative_interactions_one_prot_one_clf_pd)
 
-        train_negative_interactions_one_clf_pd = pd.concat(all_prot_train_negative_interactions_one_clf_pd)
+            possible_frequent_hitters_negative_interactions_one_prot_pd = negative_interactions_one_prot_pd[negative_interactions_one_prot_pd['Drugbank ID'].isin(possible_frequent_hitters)]
+            nb_frequent_hitters_negative_interactions = possible_frequent_hitters_negative_interactions_one_prot_pd.shape[0]
 
-        train_interactions_one_clf_pd = pd.concat([train_positive_interactions_pd, train_negative_interactions_one_clf_pd])
+            print("possible frequent hitters negative interactions:", nb_frequent_hitters_negative_interactions)
+
+            if nb_positive_interactions<nb_frequent_hitters_negative_interactions: 
+
+                negative_interactions_one_prot_pd = possible_frequent_hitters_negative_interactions_one_prot_pd.sample(nb_positive_interactions)
+
+            else:
+                
+                frequent_hitters_negative_interactions_one_prot_pd = possible_frequent_hitters_negative_interactions_one_prot_pd
+                
+                nb_negative_interactions_remaining = nb_positive_interactions - nb_frequent_hitters_negative_interactions
+                
+                possible_one_int_negative_interactions_one_prot_pd = negative_interactions_one_prot_pd[negative_interactions_one_prot_pd['Drugbank ID'].isin(possible_one_int_drug)]
+                one_int_negative_interactions_one_prot_pd = possible_one_int_negative_interactions_one_prot_pd.sample(nb_negative_interactions_remaining)
+                
+                negative_interactions_one_prot_pd = pd.concat([frequent_hitters_negative_interactions_one_prot_pd,
+                                                                one_int_negative_interactions_one_prot_pd])
+
+            all_prot_train_negative_interactions_one_clf_list.append(negative_interactions_one_prot_pd)
+
+            # Change the number of counts in the drug dictionary
+            for drug_id in negative_interactions_one_prot_pd['Drugbank ID']:
+                dict_old_count = remaining_drugs_count[drug_id]
+                remaining_drugs_count[drug_id] = dict_old_count - 1
+
+        all_prot_train_negative_interactions_one_clf_pd = pd.concat(all_prot_train_negative_interactions_one_clf_list)
+
+        train_interactions_one_clf_pd = pd.concat([train_positive_interactions_pd, 
+                                                  all_prot_train_negative_interactions_one_clf_pd])
         all_clf_train_interactions_arr.append(train_interactions_one_clf_pd.to_numpy())
 
     print("Train datasets preprared.")

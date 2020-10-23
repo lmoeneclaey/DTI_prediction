@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --job-name=VMO_center_norm_pred
-#SBATCH --output=/mnt/data4/mnajm/CFTR_PROJECT/log/CV/vertex-modulators-orphan_center_norm_pred_20200726.log
-#SBATCH --error=/mnt/data4/mnajm/CFTR_PROJECT/log/CV/vertex-modulators-orphan_center_norm_pred_20200726.err
+#SBATCH --job-name=VMO_SVM_pred
+#SBATCH --output=/mnt/data4/mnajm/CFTR_PROJECT/log/CV/VMO_SVM_pred_20201020.log
+#SBATCH --error=/mnt/data4/mnajm/CFTR_PROJECT/log/CV/VMO_SVM_pred_20201020.err
 #SBATCH --mem 20000
 
 # Vertex

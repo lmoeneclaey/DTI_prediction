@@ -1,6 +1,9 @@
+import numpy as np
 import os
 
+from rdkit import DataStructs
 from rdkit import Chem
+from rdkit.Chem import AllChem
 
 root = "./../CFTR_PROJECT/"
 # To change in the future
@@ -165,6 +168,20 @@ def get_non_DrugBank_smile(drug_name):
     f.close()
 
     return smile
+
+def get_non_DrugBank_feature(smile):
+
+    m = Chem.MolFromSmiles(smile)
+
+    arr = np.zeros((1,))
+    DataStructs.ConvertToNumpyArray(AllChem.GetMorganFingerprintAsBitVect(m, 
+                                                  2, 
+                                                  nBits=1024), 
+                                        arr)
+
+    return arr
+
+
 
 
     

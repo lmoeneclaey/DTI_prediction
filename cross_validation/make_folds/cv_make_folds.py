@@ -8,7 +8,6 @@ import sklearn.model_selection as model_selection
 
 from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB, get_subset_couples
 from DTI_prediction.process_dataset.process_DB import get_DB
-from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset
 
 root = './../CFTR_PROJECT/'
 
@@ -165,7 +164,7 @@ def make_folds(seed, nb_clf, preprocessed_DB):
     interactions = preprocessed_DB.interactions
 
     # Set the different seeds
-    nb_folds = 5
+    nb_folds = 6
     positive_seed = 62
     negative_seed = 53
 
@@ -178,7 +177,7 @@ def make_folds(seed, nb_clf, preprocessed_DB):
     # test_positive_folds is a list (length: nb_folds) of Couples (length: (1/nb_folds)*nb_positive_inter)
     test_positive_folds_pd = []
 
-    skf_positive = model_selection.KFold(shuffle=True,random_state=positive_seed)
+    skf_positive = model_selection.KFold(shuffle=True,random_state=positive_seed, n_splits=nb_folds)
     for train_index, test_index in skf_positive.split(range(nb_positive_inter)):
     
         train_positive_fold = get_subset_couples(interactions,
@@ -223,6 +222,8 @@ def make_folds(seed, nb_clf, preprocessed_DB):
         # get for each protein in the train dataset the number of occurences
         train_positive_fold_pd = train_positive_folds_pd[ifold]
         proteins_count = dict(train_positive_fold_pd['UniProt ID'].value_counts())
+        drugs_count = dict(train_positive_fold_pd['Drugbank ID'].value_counts())
+
 
         # all of the classifiers train negative interactions for one fold
         # useful to have the test negative interactions
@@ -236,16 +237,36 @@ def make_folds(seed, nb_clf, preprocessed_DB):
             all_prot_train_negative_interactions_one_clf_pd = []
 
             for row_nb in range(len(proteins_count)):
+
+            
+
                 protein_id = list(proteins_count.keys())[row_nb]
                 nb_positive_interactions_in_train = proteins_count[protein_id]
+
+                print(nb_positive_interactions_in_train)
 
                 # get all the negative interactions concerning this protein
                 negative_interactions_one_prot_pd = all_negative_interactions_pd[all_negative_interactions_pd['UniProt ID']==protein_id]
 
+                # remove the interactions involving drugs "already full in number of negative interactions"
+                possible_drugs = []
+                for (drug, count) in drugs_count.items():
+                    if count!=0:
+                        possible_drugs.append(drug)
+
+                possible_negative_interactions_one_prot_pd = negative_interactions_one_prot_pd[negative_interactions_one_prot_pd['Drugbank ID'].isin(possible_drugs)]
+
+                print(possible_negative_interactions_one_prot_pd.shape[0])
+
                 # sample among the negative interactions concerning this prot,
                 # the number of positive interactions in the train dataset
-                train_negative_interactions_one_prot_one_clf_pd = negative_interactions_one_prot_pd.sample(nb_positive_interactions_in_train)
+                train_negative_interactions_one_prot_one_clf_pd = possible_negative_interactions_one_prot_pd.sample(nb_positive_interactions_in_train)
                 all_prot_train_negative_interactions_one_clf_pd.append(train_negative_interactions_one_prot_one_clf_pd)
+
+                # Change the number of counts in the drug dictionary
+                for drug_id in train_negative_interactions_one_prot_one_clf_pd['Drugbank ID']:
+                    dict_old_count = drugs_count[drug_id]
+                    drugs_count[drug_id] = dict_old_count - 1
         
             train_negative_interactions_one_clf_pd = pd.concat(all_prot_train_negative_interactions_one_clf_pd)
             # all of the classifiers train negative interactions for one fold
