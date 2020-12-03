@@ -34,13 +34,13 @@ if __name__ == "__main__":
                         help = "the name of the process, helper to find the \
                         data again, example = 'DTI'")
 
-    parser.add_argument("--norm", default = False, action="store_true", 
-                        help = "whether or not to normalize the kernels, False \
-                        by default")
+    # parser.add_argument("--norm", default = False, action="store_true", 
+    #                     help = "whether or not to normalize the kernels, False \
+    #                     by default")
 
-    parser.add_argument("--center_norm", default = False, action="store_true", 
-                        help = "whether or not to center AND normalize the \
-                            kernels, False by default")
+    # parser.add_argument("--center_norm", default = False, action="store_true", 
+    #                     help = "whether or not to center AND normalize the \
+    #                         kernels, False by default")
 
     args = parser.parse_args()
 
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
-    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.center_norm, args.norm)
+    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type)
 
     list_clf = []
 
@@ -118,16 +118,19 @@ if __name__ == "__main__":
     
     print("Classifiers done.")
         
-    # Classifier name
-    if args.center_norm == True:
-        clf_filename = clf_dirname + pattern_name + \
+    # # Classifier name
+    # if args.center_norm == True:
+    #     clf_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_clf_centered_norm.data'
+    # elif args.norm == True:
+    #     clf_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_clf_norm.data'
+    # else:
+    #     clf_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_clf.data'
+
+    clf_filename = clf_dirname + pattern_name + \
         '_kronSVM_list_clf_centered_norm.data'
-    elif args.norm == True:
-        clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf_norm.data'
-    else:
-        clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf.data'
 
     pickle.dump(list_clf, 
                 open(clf_filename, 'wb'),

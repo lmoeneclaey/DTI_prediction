@@ -1,4 +1,5 @@
 import argparse 
+import copy
 import pickle
 import numpy as np
 import os
@@ -29,6 +30,9 @@ if __name__ == "__main__":
     parser.add_argument("DB_type", type = str,
                         help = "the DrugBank type, example: 'S0h'")
 
+    parser.add_argument("nb_clf", type = int,
+                        help = "number of classifiers for future predictions, example = 5")
+
     parser.add_argument("--balanced_on_proteins", default = False, action="store_true", 
                         help = "whether or not to normalize the kernels, False \
                         by default")
@@ -36,9 +40,6 @@ if __name__ == "__main__":
     parser.add_argument("--balanced_on_drugs", default = False, action="store_true", 
                         help = "whether or not to center AND normalize the \
                             kernels, False by default")
-
-    # parser.add_argument("nb_clf", type = int,
-    #                     help = "number of classifiers for future predictions, example = 5")
 
     # parser.add_argument("C", type = int,
     #                     help = "C hyperparameter in SVM algorithm")
@@ -58,70 +59,124 @@ if __name__ == "__main__":
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
-    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, center_norm = True, norm = False)
+    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type)
 
     # Get the nested folds and classifiers
     nested_cv_dirname = root + data_dir + 'cross_validation/nested_folds/'
     if args.balanced_on_proteins == True:
         if args.balanced_on_drugs == True:
-            nested_folds_array_filename = nested_cv_dirname \
-            + args.DB_type + '_nested_folds_double_balanced_5_clf_array.data'
-            cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_double_balanced_clf_5_clf.data'
-            output_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_double_balanced_5_clf_pred.data'
+            nested_folds_array_filename = nested_cv_dirname + args.DB_type \
+            + '_nested_folds_double_balanced_' + str(args.nb_clf) \
+            + '_clf_array.data'
+            cv_clf_filename = kronsvm_cv_dirname + args.DB_type \
+            + '_kronSVM_cv_nested_double_balanced_' + str(args.nb_clf) \
+            + '_clf_clf.data'
+            output_filename = kronsvm_cv_dirname + args.DB_type \
+            + '_kronSVM_cv_nested_double_balanced_' + str(args.nb_clf) \
+            + '_clf_pred.data'
         else:
-            nested_folds_array_filename = nested_cv_dirname \
-            + args.DB_type + '_nested_folds_balanced_on_proteins_5_clf_array.data'
-            cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_balanced_on_proteins_clf_5_clf.data'
-            output_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_balanced_on_proteins_5_clf_pred.data'
+            nested_folds_array_filename = nested_cv_dirname + args.DB_type \
+            + '_nested_folds_balanced_on_proteins_' + str(args.nb_clf) \
+            + '_clf_array.data'
+            cv_clf_filename = kronsvm_cv_dirname + args.DB_type \
+            + '_kronSVM_cv_nested_balanced_on_proteins_' + str(args.nb_clf) \
+            + '_clf_clf.data'
+            output_filename = kronsvm_cv_dirname + args.DB_type \
+            + '_kronSVM_cv_nested_balanced_on_proteins_' + str(args.nb_clf) \
+            + '_clf_pred.data'
     else:
         if args.balanced_on_drugs == True:
-            nested_folds_array_filename = nested_cv_dirname \
-            + args.DB_type + '_nested_folds_balanced_on_drugs_5_clf_array.data'
-            cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_balanced_on_drugs_clf_5_clf.data'
-            output_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_balanced_on_drugs_5_clf_pred.data'
+            nested_folds_array_filename = nested_cv_dirname + args.DB_type \
+            + '_nested_folds_balanced_on_drugs_' + str(args.nb_clf) \
+            + '_clf_array.data'
+            cv_clf_filename = kronsvm_cv_dirname + args.DB_type \
+            + '_kronSVM_cv_nested_balanced_on_drugs_' + str(args.nb_clf) \
+            + '_clf_clf.data'
+            output_filename = kronsvm_cv_dirname + args.DB_type \
+            + '_kronSVM_cv_nested_balanced_on_drugs_' + str(args.nb_clf) \
+            + '_clf_pred.data'
         else:
-            nested_folds_array_filename = nested_cv_dirname \
-            + args.DB_type + '_nested_folds_non_balanced_5_clf_array.data' 
-            cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_non_balanced_clf_5_clf.data'
-            output_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_non_balanced_5_clf_pred.data'
+            nested_folds_array_filename = nested_cv_dirname + args.DB_type \
+            + '_nested_folds_non_balanced_' + str(args.nb_clf) \
+            + '_clf_array.data' 
+            cv_clf_filename = kronsvm_cv_dirname + args.DB_type \
+            + '_kronSVM_cv_nested_non_balanced_' + str(args.nb_clf) \
+            + '_clf_clf.data'
+            output_filename = kronsvm_cv_dirname + args.DB_type \
+            + '_kronSVM_cv_nested_non_balanced_' + str(args.nb_clf) \
+            + '_clf_pred.data'
 
     nested_folds_array = pickle.load(open(nested_folds_array_filename, 'rb'))
+    list_clf = pickle.load(open(cv_clf_filename, 'rb'))
 
-    nb_clf = len(nested_folds_array)
-    nb_folds = len(nested_folds_array[0])
+    # # Get the test folds
+    # test_folds_filename = nested_cv_dirname + args.DB_type \
+    # + '_nested_folds_double_balanced_' + str(args.nb_clf) \
+    # + '_clf_array.data'
 
-    list_folds = []
-    for iclf in range(nb_clf):
-        list_folds_per_clf = []
+    # test_folds_array = pickle.load(open(test_folds_filename, 'rb'))
+
+    nb_clf = args.nb_clf
+
+    if nb_clf==1:
+        nb_folds = len(nested_folds_array)
+
+        list_folds = []
+        cv_list_clf = []
+        test_folds = []
+        for ifold in range(len(nested_folds_array)):
+            # train folds
+            fold_dataset = get_couples_from_array(nested_folds_array[ifold])
+            list_folds.append([fold_dataset])
+
+            # classifier
+            cv_list_clf.append([list_clf[ifold]])
+
+            # test folds
+            test_fold_dataset = get_couples_from_array(nested_folds_array[ifold])
+            test_folds.append(test_fold_dataset)
+
+    else:
+        nb_folds = len(nested_folds_array[0])
+
+        # train folds
+        list_folds = []
+        for iclf in range(nb_clf):
+            list_folds_per_clf = []
+            for ifold in range(nb_folds):
+                fold_dataset = get_couples_from_array(nested_folds_array[iclf][ifold])
+                list_folds_per_clf.append(fold_dataset)
+            list_folds.append(list_folds_per_clf)
+
+        # classifier
+        cv_list_clf = copy.deepcopy(list_clf)
+
+        # test folds
+        test_folds = []
         for ifold in range(nb_folds):
-            fold_dataset = get_couples_from_array(nested_folds_array[iclf][ifold])
-            list_folds_per_clf.append(fold_dataset)
-        list_folds.append(list_folds_per_clf)
-
-    cv_list_clf = pickle.load(open(cv_clf_filename, 'rb'))
+            test_fold_dataset = get_couples_from_array(nested_folds_array[0][ifold])
+            # test_fold_dataset = get_couples_from_array(nested_folds_array[0][(ifold+3)%5])
+            test_folds.append(test_fold_dataset)
 
     cv_list_pred = []
 
     for ifold in range(nb_folds):
 
         print("fold:", ifold)
-        test_dataset = list_folds[0][ifold]
+        test_dataset = test_folds[ifold]
 
         cv_list_pred_per_fold = []
         for iclf in range(nb_clf):
 
             train_folds = [list_folds[iclf][(ifold+1)%5],
                            list_folds[iclf][(ifold+2)%5],
-                           list_folds[iclf][(ifold+4)%5],
-                           list_folds[iclf][(ifold+5)%5]]
+                           list_folds[iclf][(ifold+3)%5],
+                           list_folds[iclf][(ifold+4)%5]]
+
+            # train_folds = [list_folds[iclf][(ifold+1)%5],
+            #                list_folds[iclf][(ifold+2)%5],
+            #                list_folds[iclf][(ifold+4)%5],
+            #                list_folds[iclf][(ifold+5)%5]]
 
             train_dataset = sum(train_folds)
 

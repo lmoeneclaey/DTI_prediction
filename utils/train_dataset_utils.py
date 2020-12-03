@@ -103,11 +103,11 @@ def get_number_of_interactions_per_mol(train_dataset_pd, test_dataset_pd):
         test_nb_interactions_per_mol_list.append(test_inner_mol_interactions.shape[0])
 
     test_nb_interactions_per_mol = pd.DataFrame({'DrugBank ID':list(test_mol_involved),
-                                                   'Nb_interactions':test_nb_interactions_per_mol_list})
+                                                   'Nb_interactions_per_drug':test_nb_interactions_per_mol_list})
 
     # Adapt the number of categories
     category = []
-    for val in test_nb_interactions_per_mol['Nb_interactions']:
+    for val in test_nb_interactions_per_mol['Nb_interactions_per_drug']:
         if val==0:
             category.append('0')
         elif 1 <= val <=4:
@@ -134,19 +134,36 @@ def get_number_of_interactions_per_prot(train_dataset_pd, test_dataset_pd):
         test_nb_interactions_per_prot_list.append(test_inner_prot_interactions.shape[0])
 
     test_nb_interactions_per_prot = pd.DataFrame({'UniProt ID':list(test_prot_involved),
-                                                 'Nb_interactions':test_nb_interactions_per_prot_list})
+                                                 'Nb_interactions_per_prot':test_nb_interactions_per_prot_list})
 
     # Adapt the number of categories
     category = []
-    for val in test_nb_interactions_per_prot['Nb_interactions']:
+    # for val in test_nb_interactions_per_prot['Nb_interactions']:
+    #     if val==0:
+    #         category.append('0')
+    #     elif 1 <= val <=4:
+    #         category.append('[1,4]')
+    #     elif 5 <= val <= 10:
+    #         category.append('[5,10]')
+    #     else:
+    #         category.append('> 10')
+
+    for val in test_nb_interactions_per_prot['Nb_interactions_per_prot']:
         if val==0:
             category.append('0')
-        elif 1 <= val <=4:
-            category.append('[1,4]')
+        elif val==1:
+            category.append('1')
+        elif 2 <= val <=4:
+            category.append('[2,4]')
         elif 5 <= val <= 10:
             category.append('[5,10]')
+        elif 11 <= val <= 20:
+            category.append('[11,20]')
+        elif 21 <= val <= 30:
+            category.append('[21,30]')
         else:
-            category.append('> 10')
+            category.append('> 30')
+
 
     test_nb_interactions_per_prot['category_prot']=category
 

@@ -39,12 +39,12 @@ if __name__ == "__main__":
                         help = "the DrugBankId of the molecule/protein of which\
                         we want to predict the interactions")
 
-    parser.add_argument("--norm", default = False, action="store_true", 
-                        help = "whether or not to normalize the kernels")
+    # parser.add_argument("--norm", default = False, action="store_true", 
+    #                     help = "whether or not to normalize the kernels")
 
-    parser.add_argument("--center_norm", default = False, action="store_true", 
-                        help = "whether or not to center AND normalize the \
-                            kernels, False by default")
+    # parser.add_argument("--center_norm", default = False, action="store_true", 
+    #                     help = "whether or not to center AND normalize the \
+    #                         kernels, False by default")
 
     args = parser.parse_args()
 
@@ -72,27 +72,34 @@ if __name__ == "__main__":
     now = datetime.now()
     date_time = now.strftime("%Y%m%d")
 
-    if args.center_norm == True:
-        clf_filename = clf_dirname + pattern_name + \
+    # if args.center_norm == True:
+    #     clf_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_clf_centered_norm.data'
+    #     output_filename = pred_dirname + pattern_name + '_kronSVM_centered_norm_' + \
+    #         args.dbid + '_pred_output_' + date_time + '.data'
+    #     clean_filename = pred_dirname + pattern_name + "_kronSVM_centered_norm_" + \
+    #         args.dbid + '_pred_clean_' + date_time + '.csv'
+    # elif args.norm == True:
+    #     clf_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_clf_norm.data'
+    #     output_filename = pred_dirname + pattern_name + '_kronSVM_norm_' + \
+    #         args.dbid + '_pred_output_' + date_time + '.data'
+    #     clean_filename = pred_dirname + pattern_name + "_kronSVM_norm_" + \
+    #         args.dbid + '_pred_clean_' + date_time + '.csv'
+    # else:
+    #     clf_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_clf.data'
+    #     output_filename = pred_dirname + pattern_name + '_kronSVM_' + args.dbid\
+    #     + '_pred_output_' + date_time + '.data'
+    #     clean_filename = pred_dirname + pattern_name + '_kronSVM_' +args.dbid\
+    #     + '_pred_clean_' + date_time + '.csv'
+
+    clf_filename = clf_dirname + pattern_name + \
         '_kronSVM_list_clf_centered_norm.data'
-        output_filename = pred_dirname + pattern_name + '_kronSVM_centered_norm_' + \
-            args.dbid + '_pred_output_' + date_time + '.data'
-        clean_filename = pred_dirname + pattern_name + "_kronSVM_centered_norm_" + \
-            args.dbid + '_pred_clean_' + date_time + '.csv'
-    elif args.norm == True:
-        clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf_norm.data'
-        output_filename = pred_dirname + pattern_name + '_kronSVM_norm_' + \
-            args.dbid + '_pred_output_' + date_time + '.data'
-        clean_filename = pred_dirname + pattern_name + "_kronSVM_norm_" + \
-            args.dbid + '_pred_clean_' + date_time + '.csv'
-    else:
-        clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf.data'
-        output_filename = pred_dirname + pattern_name + '_kronSVM_' + args.dbid\
-        + '_pred_output_' + date_time + '.data'
-        clean_filename = pred_dirname + pattern_name + '_kronSVM_' +args.dbid\
-        + '_pred_clean_' + date_time + '.csv'
+    output_filename = pred_dirname + pattern_name + '_kronSVM_centered_norm_' + \
+        args.dbid + '_pred_output_' + date_time + '.data'
+    clean_filename = pred_dirname + pattern_name + "_kronSVM_centered_norm_" + \
+        args.dbid + '_pred_clean_' + date_time + '.csv'
 
     # Get the drugs and the proteins of the DrugBank database
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
@@ -100,7 +107,7 @@ if __name__ == "__main__":
     DB_proteins = preprocessed_DB.proteins
 
     # Get the kernels of the DrugBank database
-    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.center_norm, args.norm)
+    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type)
     DB_drugs_kernel = kernels[0]
     DB_proteins_kernel = kernels[1]
     
@@ -152,10 +159,12 @@ if __name__ == "__main__":
         # make_new_K_mol, the normalise part should be included after confirmation
         DB_drugs_kernel_updated = make_mol_kernel(DB_drugs_updated)[1]
 
-        if args.center_norm == True:
-            DB_drugs_kernel_updated = center_and_normalise_kernel(DB_drugs_kernel_updated)
-        elif args.norm == True:
-            DB_drugs_kernel_updated = normalise_kernel(DB_drugs_kernel_updated)
+        # if args.center_norm == True:
+        #     DB_drugs_kernel_updated = center_and_normalise_kernel(DB_drugs_kernel_updated)
+        # elif args.norm == True:
+        #     DB_drugs_kernel_updated = normalise_kernel(DB_drugs_kernel_updated)
+
+        DB_drugs_kernel_updated = center_and_normalise_kernel(DB_drugs_kernel_updated)
 
         for iclf in range(nb_clf):
 

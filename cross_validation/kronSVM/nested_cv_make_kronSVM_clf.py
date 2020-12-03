@@ -73,7 +73,7 @@ if __name__ == "__main__":
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
-    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, center_norm = True, norm = True)
+    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type)
 
     # Get the nested folds
     nested_cv_dirname = root + data_dir + 'cross_validation/nested_folds/'
@@ -83,23 +83,23 @@ if __name__ == "__main__":
             nested_folds_array_filename = nested_cv_dirname \
             + args.DB_type + '_nested_folds_double_balanced_5_clf_array.data'
             cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_double_balanced_clf_5_clf.data'
+                    '_kronSVM_cv_nested_double_balanced_5_clf_clf.data'
         else:
             nested_folds_array_filename = nested_cv_dirname \
             + args.DB_type + '_nested_folds_balanced_on_proteins_5_clf_array.data'
             cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_balanced_on_proteins_clf_5_clf.data'
+                    '_kronSVM_cv_nested_balanced_on_proteins_5_clf_clf.data'
     else:
         if args.balanced_on_drugs == True:
             nested_folds_array_filename = nested_cv_dirname \
             + args.DB_type + '_nested_folds_balanced_on_drugs_5_clf_array.data'
             cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_balanced_on_drugs_clf_5_clf.data'
+                    '_kronSVM_cv_nested_balanced_on_drugs_5_clf_clf.data'
         else:
             nested_folds_array_filename = nested_cv_dirname \
             + args.DB_type + '_nested_folds_non_balanced_5_clf_array.data' 
             cv_clf_filename = kronsvm_cv_dirname + args.DB_type + \
-                    '_kronSVM_cv_nested_non_balanced_clf_5_clf.data'
+                    '_kronSVM_cv_nested_non_balanced_5_clf_clf.data'
 
     nested_folds_array = pickle.load(open(nested_folds_array_filename, 'rb'))
 
@@ -125,8 +125,8 @@ if __name__ == "__main__":
 
             train_folds = [list_folds[iclf][(ifold+1)%5],
                            list_folds[iclf][(ifold+2)%5],
-                           list_folds[iclf][(ifold+4)%5],
-                           list_folds[iclf][(ifold+5)%5]]
+                           list_folds[iclf][(ifold+3)%5],
+                           list_folds[iclf][(ifold+4)%5]]
 
             train_dataset = sum(train_folds)
 
