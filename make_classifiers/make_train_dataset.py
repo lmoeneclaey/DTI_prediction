@@ -134,6 +134,74 @@ def make_train_dataset(DB):
 
     return all_clf_train_interactions_arr
 
+def make_non_balanced_train_dataset(DB):
+    """ 
+    Get the list of all the couples that are in the train:
+        - the "positive" (known) interactions (with indices ind_true_inter)
+        _ the "negative" (unknown) interactions (with indices ind_false_inter)  
+
+    Parameters
+    ----------
+    preprocessed_DB : tuple of length 8
+        got with the function process_dataset.process_DB.get_DB()
+
+    Returns
+    -------
+    all_clf_train_interactions_arr : List of numpy array of the train interactions
+
+    """ 
+
+    dict_ind2mol = DB.drugs.dict_ind2mol
+    dict_ind2prot = DB.proteins.dict_ind2prot
+    intMat = DB.intMat
+    interactions = DB.interactions
+
+    # "POSITIVE" INTERACTIONS
+
+    train_positive_interactions = copy.deepcopy(interactions)
+    train_positive_interactions_pd = pd.DataFrame(train_positive_interactions.array, 
+                                                  columns=['UniProt ID', 
+                                                            'Drugbank ID', 
+                                                            'interaction_bool'])
+
+
+    # "NEGATIVE" INTERACTIONS
+
+    # get the interactions indices
+    # ind_false_inter : indices where there is not an interaction
+    ind_all_negative_inter = np.where(intMat == 0)
+    nb_all_negative_inter = len(ind_all_negative_inter[0])
+
+    all_negative_interactions_protein_id = []
+    all_negative_interactions_drug_id = []
+    for row in range(nb_all_negative_inter):
+        all_negative_interactions_protein_id.append(dict_ind2prot[ind_all_negative_inter[0][row]])
+        all_negative_interactions_drug_id.append(dict_ind2mol[ind_all_negative_inter[1][row]])
+
+    all_negative_interactions_pd = pd.DataFrame({'UniProt ID':all_negative_interactions_protein_id, 
+                                                 'Drugbank ID':all_negative_interactions_drug_id,
+                                                 'interaction_bool':0})
+    
+    remaining_negative_interactions_pd = copy.deepcopy(all_negative_interactions_pd)
+
+    # number of classifiers
+    nb_clf = 5
+    list_seed = [2989, 1587, 5599, 4100, 1699]
+
+    all_clf_train_interactions_arr = []
+    for iclf in range(nb_clf):
+
+        train_negative_interactions_one_clf_pd = remaining_negative_interactions_pd.sample(n = DB.interactions.nb,
+                                                                                           random_state = list_seed[iclf])
+
+        train_interactions_one_clf_pd = pd.concat([train_positive_interactions_pd, 
+                                                   train_negative_interactions_one_clf_pd])
+        all_clf_train_interactions_arr.append(train_interactions_one_clf_pd.to_numpy())
+
+    print("Train datasets preprared.")
+
+    return all_clf_train_interactions_arr
+
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(
@@ -150,6 +218,11 @@ if __name__ == "__main__":
     parser.add_argument("process_name", type = str,
                         help = "the name of the process, helper to find the \
                         data again, example = 'DTI'")
+
+    parser.add_argument("--non_balanced", default = False, action="store_true",
+                        help = "whether the train datasets are balanced in terms \
+                            of nb of interactions per proteins and drugs, \
+                            balanced by default")
 
     parser.add_argument("--orphan", type = str, action='append',
                         help = "molecules which you want to orphanize in the \
@@ -213,9 +286,9 @@ if __name__ == "__main__":
         print(nb_interactions_to_correct, " interactions to add or correct.")
 
         for iinter in range(nb_interactions_to_correct):
-            protein_dbid = corrected_interactions["UniprotID"][iinter]
-            drug_dbid = corrected_interactions["DrugbankID"][iinter]
-            corrected_interaction_bool = corrected_interactions[ "corrected_interaction_bool"][iinter]
+            protein_dbid = corrected_interactions["UniProt ID"][iinter]
+            drug_dbid = corrected_interactions["DrugBank ID"][iinter]
+            corrected_interaction_bool = corrected_interactions[ "interaction_bool"][iinter]
             
             corrected_DB = correct_interactions(protein_dbid,
                                                 drug_dbid,
@@ -225,9 +298,16 @@ if __name__ == "__main__":
     print("For this classifier, there will be", corrected_DB.interactions.nb, 
           "interactions.")
 
-    list_train_datasets_array = make_train_dataset(corrected_DB)
+    if args.non_balanced == True:
 
-    train_datasets_array_filename = train_datasets_dirname + pattern_name + \
+        list_train_datasets_array = make_non_balanced_train_dataset(corrected_DB)
+        train_datasets_array_filename = train_datasets_dirname + pattern_name + \
+        '_non_balanced_train_datasets_array.data'
+
+    else:
+
+        list_train_datasets_array = make_train_dataset(corrected_DB)
+        train_datasets_array_filename = train_datasets_dirname + pattern_name + \
         '_train_datasets_array.data'
 
     pickle.dump(list_train_datasets_array, 

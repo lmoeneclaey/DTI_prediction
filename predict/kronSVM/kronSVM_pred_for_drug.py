@@ -39,6 +39,11 @@ if __name__ == "__main__":
                         help = "the DrugBankId of the molecule/protein of which\
                         we want to predict the interactions")
 
+    parser.add_argument("--non_balanced", default = False, action="store_true",
+                        help = "whether the train dataset are balanced in terms \
+                            of nb of interactions per proteins and drugs, \
+                            balanced by default")
+
     # parser.add_argument("--norm", default = False, action="store_true", 
     #                     help = "whether or not to normalize the kernels")
 
@@ -94,12 +99,9 @@ if __name__ == "__main__":
     #     clean_filename = pred_dirname + pattern_name + '_kronSVM_' +args.dbid\
     #     + '_pred_clean_' + date_time + '.csv'
 
-    clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf_centered_norm.data'
-    output_filename = pred_dirname + pattern_name + '_kronSVM_centered_norm_' + \
-        args.dbid + '_pred_output_' + date_time + '.data'
-    clean_filename = pred_dirname + pattern_name + "_kronSVM_centered_norm_" + \
-        args.dbid + '_pred_clean_' + date_time + '.csv'
+    # output_filename = pred_dirname + pattern_name + '_kronSVM_centered_norm_' + \
+    #     args.dbid + '_pred_output_' + date_time + '.data'
+
 
     # Get the drugs and the proteins of the DrugBank database
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
@@ -111,13 +113,29 @@ if __name__ == "__main__":
     DB_drugs_kernel = kernels[0]
     DB_proteins_kernel = kernels[1]
     
+    if args.non_balanced == True:
+
+        train_datasets_array_filename = train_datasets_dirname + pattern_name + \
+        '_non_balanced_train_datasets_array.data'
+        clf_filename = clf_dirname + pattern_name + \
+        '_non_balanced_kronSVM_list_clf_centered_norm.data'
+        clean_filename = pred_dirname + pattern_name + "_non_balanced_kronSVM_centered_norm_" + \
+        args.dbid + '_pred_clean_' + date_time + '.csv'
+
+    else:
+
+        train_datasets_array_filename = train_datasets_dirname + pattern_name + \
+        '_train_datasets_array.data'
+        clf_filename = clf_dirname + pattern_name + \
+        '_kronSVM_list_clf_centered_norm.data'
+        clean_filename = pred_dirname + pattern_name + "_kronSVM_centered_norm_" + \
+        args.dbid + '_pred_clean_' + date_time + '.csv'
+
     # get the classifiers
     list_clf = pickle.load(open(clf_filename, 'rb'))
     nb_clf = len(list_clf)
 
     # Get the train datasets
-    train_datasets_array_filename = train_datasets_dirname + pattern_name + \
-        '_train_datasets_array.data'
     train_datasets_array = pickle.load(open(train_datasets_array_filename, 'rb'))
 
     nb_clf = len(train_datasets_array)

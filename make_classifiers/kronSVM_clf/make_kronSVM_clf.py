@@ -34,6 +34,12 @@ if __name__ == "__main__":
                         help = "the name of the process, helper to find the \
                         data again, example = 'DTI'")
 
+    parser.add_argument("--non_balanced", default = False, action="store_true",
+                        help = "whether the train dataset are balanced in terms \
+                            of nb of interactions per proteins and drugs, \
+                            balanced by default")
+
+
     # parser.add_argument("--norm", default = False, action="store_true", 
     #                     help = "whether or not to normalize the kernels, False \
     #                     by default")
@@ -76,8 +82,21 @@ if __name__ == "__main__":
     # Get the train datasets 
 
     train_datasets_dirname = root + data_dir + '/classifiers/train_datasets/'
-    train_datasets_array_filename = train_datasets_dirname + pattern_name + \
+    clf_dirname = root + data_dir + '/classifiers/kronSVM/'
+
+    if args.non_balanced == True:
+
+        train_datasets_array_filename = train_datasets_dirname + pattern_name + \
+        '_non_balanced_train_datasets_array.data'
+        clf_filename = clf_dirname + pattern_name + \
+        '_non_balanced_kronSVM_list_clf_centered_norm.data'
+
+    else:
+
+        train_datasets_array_filename = train_datasets_dirname + pattern_name + \
         '_train_datasets_array.data'
+        clf_filename = clf_dirname + pattern_name + \
+        '_kronSVM_list_clf_centered_norm.data'
 
     train_datasets_array = pickle.load(open(train_datasets_array_filename, 'rb'))
 
@@ -87,8 +106,6 @@ if __name__ == "__main__":
     for iclf in range(nb_clf):
         train_dataset = get_couples_from_array(train_datasets_array[iclf])
         list_train_datasets.append(train_dataset)
-
-    clf_dirname = root + data_dir + '/classifiers/kronSVM/'
 
     C = 10.
 
@@ -128,9 +145,6 @@ if __name__ == "__main__":
     # else:
     #     clf_filename = clf_dirname + pattern_name + \
     #     '_kronSVM_list_clf.data'
-
-    clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf_centered_norm.data'
 
     pickle.dump(list_clf, 
                 open(clf_filename, 'wb'),
