@@ -83,13 +83,7 @@ def correct_interactions(protein_dbid, drug_dbid, corrected_interaction_bool, DB
         if initial_interaction_bool != corrected_interaction_bool:
             corrected_couples_pd.at[couple_index, 'interaction_bool'] = corrected_interaction_bool
 
-        corrected_couples = get_couples_from_array(couples_pd.to_numpy())
-
-        corrected_DB = FormattedDB(drugs=DB.drugs,
-                                   proteins=DB.proteins,
-                                   couples=corrected_couples)
-
-
+        corrected_couples = get_couples_from_array(corrected_couples_pd.to_numpy())
 
     # 2 - l'interaction n'est pas dans DB
     else:
