@@ -2,16 +2,17 @@ import argparse
 import copy
 import numpy as np
 import os
+import pandas as pd
 import pickle
 
 from sklearn.svm import SVC
 
 from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB
+from DTI_prediction.process_dataset.DB_utils import get_couples_from_array
 from DTI_prediction.process_dataset.process_DB import get_DB
-from DTI_prediction.process_dataset.correct_interactions import get_orphan
 from DTI_prediction.make_kernels.get_kernels import get_K_mol_K_prot
 
-from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset, get_train_dataset, make_K_train
+from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import make_K_train
 
 root = './../CFTR_PROJECT/'
 
@@ -33,13 +34,19 @@ if __name__ == "__main__":
                         help = "the name of the process, helper to find the \
                         data again, example = 'DTI'")
 
-    parser.add_argument("--norm", default = False, action="store_true", 
-                        help = "where or not to normalize the kernels, False \
-                        by default")
+    parser.add_argument("--non_balanced", default = False, action="store_true",
+                        help = "whether the train dataset are balanced in terms \
+                            of nb of interactions per proteins and drugs, \
+                            balanced by default")
 
-    parser.add_argument("--orphan", type = str, action='append',
-                        help = "molecules which you want to orphanize in the \
-                            train data set")
+
+    # parser.add_argument("--norm", default = False, action="store_true", 
+    #                     help = "whether or not to normalize the kernels, False \
+    #                     by default")
+
+    # parser.add_argument("--center_norm", default = False, action="store_true", 
+    #                     help = "whether or not to center AND normalize the \
+    #                         kernels, False by default")
 
     args = parser.parse_args()
 
@@ -48,9 +55,10 @@ if __name__ == "__main__":
     # data_dir variable 
     data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name
 
+
     #create directories
     if not os.path.exists(root + 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name):
-        os.mkdir(root + 'data/' + args.DB_version + '/' + '/' + args.DB_type + '/' +  pattern_name)
+        os.mkdir(root + 'data/' + args.DB_version + '/' + args.DB_type + '/' +  pattern_name)
         print("Directory", pattern_name, "for",  args.DB_version, "created")
     else: 
         print("Directory", pattern_name, "for",  args.DB_version, " already exists")
@@ -71,71 +79,75 @@ if __name__ == "__main__":
         print("kronSVM classifiers directory for ", pattern_name, ",", args.DB_version,
         "already exists.")
 
-    clf_dirname = root + data_dir + 'classifiers/kronSVM/'
+    # Get the train datasets 
+
+    train_datasets_dirname = root + data_dir + '/classifiers/train_datasets/'
+    clf_dirname = root + data_dir + '/classifiers/kronSVM/'
+
+    if args.non_balanced == True:
+
+        train_datasets_array_filename = train_datasets_dirname + pattern_name + \
+        '_non_balanced_train_datasets_array.data'
+        clf_filename = clf_dirname + pattern_name + \
+        '_non_balanced_kronSVM_list_clf_centered_norm.data'
+
+    else:
+
+        train_datasets_array_filename = train_datasets_dirname + pattern_name + \
+        '_train_datasets_array.data'
+        clf_filename = clf_dirname + pattern_name + \
+        '_kronSVM_list_clf_centered_norm.data'
+
+    train_datasets_array = pickle.load(open(train_datasets_array_filename, 'rb'))
+
+    nb_clf = len(train_datasets_array)
+
+    list_train_datasets = []
+    for iclf in range(nb_clf):
+        train_dataset = get_couples_from_array(train_datasets_array[iclf])
+        list_train_datasets.append(train_dataset)
 
     C = 10.
 
     preprocessed_DB = get_DB(args.DB_version, args.DB_type)
 
+    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type)
 
-    kernels = get_K_mol_K_prot(args.DB_version, args.DB_type, args.norm)
-
-    list_seed = [71, 343, 928, 2027, 2]
     list_clf = []
-    list_couples_of_clf = []
 
-    corrected_DB = copy.deepcopy(preprocessed_DB)
-    for dbid in args.orphan:
-        corrected_DB = get_orphan(DB=corrected_DB, dbid=dbid)
+    for iclf in range(nb_clf):
 
-    for seed in list_seed:
-        print("seed:", seed)
-
-        # Create the train dataset
-        train_dataset = get_train_dataset(seed, corrected_DB)
-        true_inter = train_dataset.true_inter
-        false_inter = train_dataset.false_inter
+        train_dataset = list_train_datasets[iclf]
 
         # Compute the kernel of interactions
-        K_train = make_K_train(train_dataset, corrected_DB, kernels)
-        y_train = np.concatenate((true_inter.interaction_bool, 
-                                  false_inter.interaction_bool),
-                                  axis=0)
+        K_train = make_K_train(train_dataset, preprocessed_DB, kernels)
+        y_train = train_dataset.interaction_bool
 
         print("Training dataset's kernel of interactions prepared.")
 
         # Create the classifier
-        clf = SVC(C=C, kernel='precomputed', probability=True, class_weight='balanced')
+        clf = SVC(C=C, 
+                  kernel='precomputed', 
+                  probability=True, 
+                  class_weight='balanced')
         clf.fit(K_train, y_train.ravel())
         list_clf.append(clf)
-
-        # the list of couples in the train set are necessary to compute the 
-        # similarity kernel for the interactions that we want to predict 
-        # true_inter = train_set[2]
-        # false_inter = train_set[3]
-        list_couples = true_inter.list_couples + false_inter.list_couples
-        list_couples_of_clf.append(list_couples)
     
     print("Classifiers done.")
         
-    # Classifier name
-    if args.norm == True:
-        clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf_norm.data'
-    else:
-        clf_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_clf.data'
+    # # Classifier name
+    # if args.center_norm == True:
+    #     clf_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_clf_centered_norm.data'
+    # elif args.norm == True:
+    #     clf_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_clf_norm.data'
+    # else:
+    #     clf_filename = clf_dirname + pattern_name + \
+    #     '_kronSVM_list_clf.data'
 
     pickle.dump(list_clf, 
                 open(clf_filename, 'wb'),
-                protocol=2)
-
-    # Couples of the classifier
-    couples_filename = clf_dirname + pattern_name + \
-        '_kronSVM_list_couples_of_clf.data'
-
-    pickle.dump(list_couples_of_clf, 
-                open(couples_filename, 'wb'), 
                 protocol=2)
     
     print("Classifiers saved.")

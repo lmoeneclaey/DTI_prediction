@@ -2,7 +2,7 @@ import numpy as np
 import pickle
 
 from DTI_prediction.process_dataset.DB_utils import Drugs, Proteins, Couples, FormattedDB, get_couples_from_array
-from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset
+# from DTI_prediction.make_classifiers.kronSVM_clf.make_K_train import InteractionsTrainDataset
 
 root = "./../CFTR_PROJECT/"
 
@@ -30,7 +30,7 @@ def get_test_folds(DB_version, DB_type):
     cv_dirname = root + data_dir + '/cross_validation/'
 
     test_folds_array_filename = cv_dirname + 'test_folds/' \
-        + DB_type + '_test_folds_array.data'
+        + DB_type + '_test_folds_array_20200724.data'
 
     test_folds_array = pickle.load(open(test_folds_array_filename, 'rb'))
     nb_folds = len(test_folds_array)
@@ -39,12 +39,11 @@ def get_test_folds(DB_version, DB_type):
     for ifold in range(nb_folds):
 
         test_fold = get_couples_from_array(test_folds_array[ifold])
-
         test_folds.append(test_fold)
 
     return test_folds
 
-def get_train_folds(DB_version, DB_type, nb_clf):
+def get_train_folds(DB_version, DB_type):
 
     """ 
     Load the train folds
@@ -59,7 +58,7 @@ def get_train_folds(DB_version, DB_type, nb_clf):
 
     Returns
     -------
-    train_folds : InteractionsTrainDataset
+    train_folds : ListInteractions 
     """ 
 
     # data_dir variable 
@@ -67,40 +66,81 @@ def get_train_folds(DB_version, DB_type, nb_clf):
 
     cv_dirname = root + data_dir + '/cross_validation/'
 
-    # True interactions
+    train_folds_array_filename = cv_dirname + 'train_folds/' \
+        + DB_type + '_train_folds_array_20200724.data'
 
-    train_true_folds_array_filename = cv_dirname + 'train_folds/' \
-        + DB_type + '_train_true_folds_' + str(nb_clf) + '_clf_array.data'
-
-    train_true_folds_array = pickle.load(open(train_true_folds_array_filename, 'rb'))
-
-    nb_folds = len(train_true_folds_array)
-    train_true_folds = []
+    train_folds_array = pickle.load(open(train_folds_array_filename, 'rb'))
     
+    nb_folds = len(train_folds_array)
+    nb_clf = len(train_folds_array[0])
+
+    train_folds = []
     for ifold in range(nb_folds):
 
-        train_true_fold = get_couples_from_array(train_true_folds_array[ifold])
-        train_true_folds.append(train_true_fold)
-
-    # False interactions
-
-    train_false_folds_array_filename = cv_dirname + 'train_folds/' \
-        + DB_type + '_train_false_folds_' + str(nb_clf) + '_clf_array.data'
-
-    train_false_folds_array = pickle.load(open(train_false_folds_array_filename, 'rb'))
-
-    train_datasets = []
-    for ifold in range(nb_folds):
-    
         train_datasets_per_fold = []
         for iclf in range(nb_clf):
-        
-            train_false_fold = get_couples_from_array(train_false_folds_array[iclf])
-            train_dataset = InteractionsTrainDataset(true_inter=train_true_folds[ifold],
-                                                     false_inter=train_false_fold)
-
+            train_dataset = get_couples_from_array(train_folds_array[ifold][iclf])
             train_datasets_per_fold.append(train_dataset)
-        
-        train_datasets.append(train_datasets_per_fold)
+        train_folds.append(train_datasets_per_fold)
 
-    return train_datasets
+    return train_folds
+
+# def get_train_folds(DB_version, DB_type, nb_clf):
+
+#     """ 
+#     Load the train folds
+
+#     Parameters
+#     ----------
+#     DB_version : str
+#         string of the DrugBank version number
+#         format : "drugbank_vX.X.X" exemple : "drugbank_v5.1.1"
+#     DB_type : str
+#         string of the DrugBank type
+
+#     Returns
+#     -------
+#     train_folds : InteractionsTrainDataset
+#     """ 
+
+#     # data_dir variable 
+#     data_dir = 'data/' + DB_version + '/' + DB_type + '/'
+#     cv_dirname = root + data_dir + 'cross_validation/'
+
+#     # True interactions
+
+#     train_true_folds_array_filename = cv_dirname + 'train_folds/' \
+#         + DB_type + '_train_true_folds_' + str(nb_clf) + '_clf_array.data'
+
+#     train_true_folds_array = pickle.load(open(train_true_folds_array_filename, 'rb'))
+
+#     nb_folds = len(train_true_folds_array)
+#     train_true_folds = []
+    
+#     for ifold in range(nb_folds):
+
+#         train_true_fold = get_couples_from_array(train_true_folds_array[ifold])
+#         train_true_folds.append(train_true_fold)
+
+#     # False interactions
+
+#     train_false_folds_array_filename = cv_dirname + 'train_folds/' \
+#         + DB_type + '_train_false_folds_' + str(nb_clf) + '_clf_array.data'
+
+#     train_false_folds_array = pickle.load(open(train_false_folds_array_filename, 'rb'))
+
+#     train_datasets = []
+#     for ifold in range(nb_folds):
+    
+#         train_datasets_per_fold = []
+#         for iclf in range(nb_clf):
+        
+#             train_false_fold = get_couples_from_array(train_false_folds_array[iclf])
+#             train_dataset = InteractionsTrainDataset(true_inter=train_true_folds[ifold],
+#                                                      false_inter=train_false_fold)
+
+#             train_datasets_per_fold.append(train_dataset)
+        
+#         train_datasets.append(train_datasets_per_fold)
+
+#     return train_datasets

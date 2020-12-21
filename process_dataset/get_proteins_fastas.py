@@ -129,7 +129,13 @@ def check_prot_length(DB_version, DB_type, fasta, dict_uniprot2seq, dbid, \
             list_inter.append((dbid, ligand))
     elif DB_type == 'S0h':
         dict_specie_per_prot = get_specie_per_uniprot(DB_version)
-        if dict_specie_per_prot[dbid] == 'Humans':
+
+        aa_bool = True
+        for aa in fasta:
+            if aa not in LIST_AA:
+                aa_bool = False
+                break
+        if (aa_bool ==True and dict_specie_per_prot[dbid] == 'Humans'):
             dict_uniprot2seq[dbid] = fasta
             for ligand in list_ligand:
                 list_inter.append((dbid, ligand))

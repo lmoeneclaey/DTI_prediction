@@ -1,4 +1,8 @@
+import copy
 import numpy as np
+import pandas as pd
+
+from rdkit import Chem
 
 class Drugs:
     """
@@ -31,6 +35,34 @@ def check_drug(dbid, drugs):
     list_dbid = list(drugs.dict_drug.keys())
 
     return dbid in list_dbid
+
+def add_drug(drugs, drug_id, smile):
+    """
+    Add a drug with its id to a list of drugs
+    """
+
+    new_drugs_temp = copy.deepcopy(drugs)
+    
+    # check that the drug is not already in the list of drugs
+    if check_drug(drug_id, drugs)==True:
+        print("The drug is already in the list.")
+
+    else:
+
+        m = Chem.MolFromSmiles(smile)
+        if m is not None and smile!='':
+            new_drugs_temp.dict_drug[drug_id]=smile
+            # to change when the Class Drugs will be updated
+            new_drugs_temp.dict_ind2mol[drugs.nb]=drug_id
+            new_drugs_temp.dict_mol2ind[drug_id]=drugs.nb
+
+    new_drugs = Drugs(dict_drug = new_drugs_temp.dict_drug,
+                      dict_ind2mol = new_drugs_temp.dict_ind2mol,
+                      dict_mol2ind = new_drugs_temp.dict_mol2ind)
+
+    return new_drugs
+
+
 
 class Proteins:
     """
@@ -97,6 +129,31 @@ class Couples:
             return self
         else:
             return self.__add__(other)
+
+def check_couple(protein_dbid,drug_dbid,couples):
+    """
+    Function which returns a boolean if the couple is in the list of Couples of\
+    a FormattedDB
+
+    Parameters
+    ----------
+    couple : tuple of length 2 
+        first term should be a DrugBankID of a drug
+        second term should be a DrugBankID of a protein
+    couples : Couples
+
+    Returns
+    -------
+    bool
+    """
+
+    couples_pd = pd.DataFrame(couples.array)
+    couples_pd.columns = ['UniprotID', 'DrugBankID', 'interaction_bool']
+
+    couple_bool = (couples_pd[(couples_pd['UniprotID']==protein_dbid) & \
+        (couples_pd['DrugBankID']==drug_dbid)].shape[0]==1)
+
+    return couple_bool
 
 def get_couples_from_array(couples_array):
 
