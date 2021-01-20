@@ -136,6 +136,23 @@ def get_number_of_interactions_per_prot(train_dataset_pd, test_dataset_pd):
     test_nb_interactions_per_prot = pd.DataFrame({'UniProt ID':list(test_prot_involved),
                                                  'Nb_interactions_per_prot':test_nb_interactions_per_prot_list})
 
+    result = pd.merge(test_dataset_pd, test_nb_interactions_per_prot[['UniProt ID', 'Nb_interactions_per_prot']], on='UniProt ID', how="left")
+
+    return result
+
+def get_number_of_interactions_cat_per_prot(train_dataset_pd, test_dataset_pd):
+
+    test_prot_involved = np.unique(test_dataset_pd['UniProt ID'])
+
+    test_nb_interactions_per_prot_list = []
+    for prot_id in list(test_prot_involved):
+        test_inner_prot_interactions = train_dataset_pd[(train_dataset_pd['UniProt ID']==prot_id) &
+                                                    (train_dataset_pd['interaction_bool']==1)]
+        test_nb_interactions_per_prot_list.append(test_inner_prot_interactions.shape[0])
+
+    test_nb_interactions_per_prot = pd.DataFrame({'UniProt ID':list(test_prot_involved),
+                                                 'Nb_interactions_per_prot':test_nb_interactions_per_prot_list})
+
     # Adapt the number of categories
     category = []
     # for val in test_nb_interactions_per_prot['Nb_interactions']:

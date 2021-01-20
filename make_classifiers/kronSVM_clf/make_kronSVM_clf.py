@@ -113,6 +113,8 @@ if __name__ == "__main__":
 
     kernels = get_K_mol_K_prot(args.DB_version, args.DB_type)
 
+    # when a new interaction is added to the train dataset (with a drug which is not in the DB), please change mol kernel
+
     list_clf = []
 
     for iclf in range(nb_clf):
