@@ -44,6 +44,9 @@ if __name__ == "__main__":
                             of nb of interactions per proteins and drugs, \
                             balanced by default")
 
+    parser.add_argument("--output_path", type=str,
+                        help = "if the predictions need to be in another folder.")
+
     # parser.add_argument("--norm", default = False, action="store_true", 
     #                     help = "whether or not to normalize the kernels")
 
@@ -60,17 +63,28 @@ if __name__ == "__main__":
     # data_dir variable 
     data_dir = 'data/' + args.DB_version + '/' + args.DB_type + '/' + pattern_name + '/'
 
-    #create directory
-    if not os.path.exists(root + data_dir + '/' + 'predictions'):
-        os.mkdir(root + data_dir + '/' + 'predictions')
-        print("Predictions directory for", pattern_name, ",", args.DB_version,
-        "created.")
-    if not os.path.exists(root + data_dir + '/' + 'predictions/kronSVM'):
-        os.mkdir(root + data_dir + '/' + 'predictions/kronSVM')
-        print("kronSVM predictions directory for", pattern_name, ",", args.DB_version,
-        "created.")
 
-    pred_dirname = root + data_dir + 'predictions/kronSVM/'
+    if args.output_path is None:
+
+        #create directory
+        if not os.path.exists(root + data_dir + '/' + 'predictions'):
+            os.mkdir(root + data_dir + '/' + 'predictions')
+            print("Predictions directory for", pattern_name, ",", args.DB_version,
+            "created.")
+        if not os.path.exists(root + data_dir + '/' + 'predictions/kronSVM'):
+            os.mkdir(root + data_dir + '/' + 'predictions/kronSVM')
+            print("kronSVM predictions directory for", pattern_name, ",", args.DB_version,
+            "created.")
+
+        pred_dirname = root + data_dir + 'predictions/kronSVM/'
+
+    else:
+
+        if os.path.exists(args.output_path):
+            pred_dirname = args.output_path
+        else:
+            print("ERROR: The informed output path is doesn't exist.")
+    
     clf_dirname = root + data_dir + 'classifiers/kronSVM/'
     train_datasets_dirname = root + data_dir + '/classifiers/train_datasets/'
 
